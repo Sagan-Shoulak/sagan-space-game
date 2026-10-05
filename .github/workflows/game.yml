@@ -1,0 +1,86 @@
+name: Space Game seed
+
+on:
+  push:
+    branches: [dev, main]
+    paths: [".github/workflows/game.yml", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
+  pull_request:
+    branches: [dev, main]
+    paths: [".github/workflows/game.yml", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-latest, os: linux }
+          - { runner: windows-latest, os: windows }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: game
+          persist-credentials: false
+      - name: Resolve exact source pins
+        id: pins
+        shell: bash
+        working-directory: game
+        run: |
+          sagan="$(tr -d '\r\n' < sagan-source-commit.txt)"
+          physics="$(tr -d '\r\n' < sagan-physics-commit.txt)"
+          [[ "$sagan" =~ ^[0-9a-f]{40}$ && "$physics" =~ ^[0-9a-f]{40}$ ]]
+          echo "sagan=$sagan" >> "$GITHUB_OUTPUT"
+          echo "physics=$physics" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          repository: Sagan-Shoulak/sagan
+          ref: ${{ steps.pins.outputs.sagan }}
+          path: sagan-source
+          fetch-depth: 0 # Version calculation requires the baseline commit history.
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: Sagan-Shoulak/sagan-physics
+          ref: ${{ steps.pins.outputs.physics }}
+          path: physics
+          persist-credentials: false
+      - uses: msys2/setup-msys2@v2
+        if: runner.os == 'Windows'
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git make mingw-w64-ucrt-x86_64-binutils mingw-w64-ucrt-x86_64-gcc
+      - name: Build pinned compiler (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        working-directory: sagan-source
+        run: make -j2 bin/sagan
+      - name: Build pinned compiler (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        working-directory: sagan-source
+        run: make -j2 bin/sagan
+      - name: Run game seed (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        working-directory: game
+        run: |
+          export SAGAN_PACKAGE_INDEX="$GITHUB_WORKSPACE/physics/libraries/index.tsv"
+          export SAGAN_EXECUTABLE="$GITHUB_WORKSPACE/sagan-source/bin/sagan"
+          bash tests/integration/game_seed_test.sh
+      - name: Run game seed (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        working-directory: game
+        run: |
+          root="$(cygpath -u "$GITHUB_WORKSPACE")"
+          export SAGAN_PACKAGE_INDEX="$root/physics/libraries/index.tsv"
+          export SAGAN_EXECUTABLE="$root/sagan-source/bin/sagan.exe"
+          bash tests/integration/game_seed_test.sh
