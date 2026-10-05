@@ -42,6 +42,7 @@ jobs:
           repository: Sagan-Shoulak/sagan
           ref: ${{ steps.pins.outputs.sagan }}
           path: sagan-source
+          fetch-depth: 0 # Version calculation requires the baseline commit history.
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
