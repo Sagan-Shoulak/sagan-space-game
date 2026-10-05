@@ -1,7 +1,6 @@
-# Space Game (local split candidate)
+# Space Game
 
-This is a local history-preserving rehearsal of the future
-`sagan-space-game` repository. It has not been published as a separate repo.
+This is the public history-preserving `sagan-space-game` repository.
 `SPACE_GAME_DESIGN.md` is the sole source of game goals; the Sagan program in
 `src/main.sagan` is an early natural-body demonstration, not a complete game
 or a substitute for decisions in the design document.
@@ -13,4 +12,5 @@ neither the shared checkout nor either snapshot was overwritten.
 
 Read [MAINTAINERS.md](MAINTAINERS.md) for exact commands and preservation,
 [TECHNOLOGY.md](TECHNOLOGY.md) for the architecture boundary, and
-[CODEX_START.md](CODEX_START.md) when starting a new game chat.
+`CODEX_START.md` once if it still exists, then `AGENTS.md` for lasting chat
+guidance.
