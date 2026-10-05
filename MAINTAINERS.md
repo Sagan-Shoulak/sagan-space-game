@@ -9,10 +9,10 @@ verified_by: null
 
 # Maintaining Space Game
 
-This is a local split candidate. `SPACE_GAME_DESIGN.md` owns the game goals;
-`src/main.sagan` is a prototype seed. The independent game repository,
-installed-toolchain test, and release pipeline do not exist yet. Do not push
-this candidate or present it as a game release.
+This is a public split repository. `SPACE_GAME_DESIGN.md` owns the game goals;
+`src/main.sagan` is a prototype seed. The installed-toolchain test and
+release pipeline remain unverified. Do not present this source as a game
+release.
 
 ## Reproduce the current focused check
 

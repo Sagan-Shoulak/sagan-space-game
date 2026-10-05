@@ -10,7 +10,8 @@ Read `AGENTS.md`, `TECHNOLOGY.md`, `MAINTAINERS.md`, `README.md`, `sagan.toml`,
 and `sagan.lock` for the current implementation and operating context, not
 for new game goals. Begin read-only: inspect branch, HEAD, status, staged
 paths, dependency pins, and concurrent work. State clearly that this is a
-local split candidate until the independent repository and tests exist.
+public split repository, but independent CI and released-dependency testing
+remain open.
 
 Prefer teaching me what to code through small steps, examples, review, and
 verification. Implement game code only when I explicitly request it. For an
@@ -28,3 +29,17 @@ constraints, pins, and verification. Do not assume another chat has your
 context. Use Bash, never PowerShell. Preserve unrelated work and do not
 push, publish, release, deploy, transfer, or alter remote settings without
 current authorization.
+
+This tracked prompt is a one-time bootstrap. After reading it and orienting
+read-only, delete `CODEX_START.md` on a short-lived branch, commit that
+deletion and any required contract updates, then open a PR into `dev` linked
+to an onboarding issue. Do not
+recreate it; `AGENTS.md`, `TECHNOLOGY.md`, `MAINTAINERS.md`, and
+`SPACE_GAME_DESIGN.md` remain the durable guidance.
+
+Use existing or new GitHub issues for substantive work, PRs into `dev` for
+review, and the organization Project for cross-repo milestones when access
+permits. Link each PR to its issue, record focused gameplay checks,
+dependency pins, and integration impact, and update Project status. If
+Project access is unavailable, record that in the issue and continue safe
+local verification. The split is tracked by Sagan-Shoulak/sagan#6.
