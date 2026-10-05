@@ -16,6 +16,14 @@ release.
 
 ## Reproduce the current focused check
 
+Independent seed CI checks out exact language and physics commits from
+`sagan-source-commit.txt` and `sagan-physics-commit.txt`, builds the compiler,
+then runs `src/main.sagan` against the pinned physics package on Linux and
+Windows using `bash tests/integration/game_seed_test.sh`. These source pins
+are a temporary CI path while released package
+consumption is paused; they do not certify a game release. Keep the lockfile
+and package versions compatible when changing either pin.
+
 Install or build Sagan and make a compatible `sagan-physics` package available.
 On the current Windows development machine, from this candidate's root in
 Git Bash, the verified rehearsal command was:
