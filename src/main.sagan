@@ -268,7 +268,9 @@ class Armor is System {
 
 class Chassis has Named {}
 
-class Ship {
+class Vehicle {}
+
+class Ship is Vehicle {
   let .engine: Engine // Main propulsion (rcs, sas possibly included or fully abstracted)
   let .storage: Storage // Fuel, food, ammo, etc, customizable and partionable storage
   let .comms: Comms // Need it to talk to folks
