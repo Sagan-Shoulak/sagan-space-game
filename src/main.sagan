@@ -1,360 +1,131 @@
-// sandbox.sagan
-// Currently a demo of how mass and planets might start working
 module main
 
-import GRAVITATIONAL_CONSTANT from physics.two_body
-
-face Named {
-  let .name: String
-
-  fun getName(): String => self.name
-}
-
-face Massive {
-  let .mass: Float<kilogram>
-
-  fun getMass(): Float<kilogram> => self.mass
-  fun getMassRatio(body: Massive): Float => self.getMass() / body.getMass()
-}
-
-face Position {
-  let .position: Point3<Float, kilometer>
-
-  fun getPosition(): Point3<Float, kilometer> => self.position
-  fun setPosition!(position: Point3<Float, kilometer>): Void { self.position = position }
-  fun getDisplacementToEntity(entity: Position): Vector3<Float, kilometer> => entity.getPosition() - self.position
-  fun getDistanceToEntity(entity: Position): Float<kilometer> => self.getDisplacementToEntity(entity).length()
-}
-
-face Physics has Position, Massive {
-  let .velocity: Vector3<Float, kilometer / second>
-  let .acceleration: Vector3<Float, kilometer / second ^ 2>
-
-  fun getVelocity(): Vector3<Float, kilometer / second> => self.velocity
-  fun setVelocity!(velocity: Vector3<Float, kilometer / second>): Void { self.velocity = velocity }
-
-  fun getAcceleration(): Vector3<Float, kilometer / second ^ 2> => self.acceleration
-  fun setAcceleration!(acceleration: Vector3<Float, kilometer / second ^ 2>): Void { self.acceleration = acceleration }
-
-  fun applyForce!(force: Vector3<Float, newton>): Void { self.setAcceleration!(force / self.getMass()) }
-  fun feelGravityFrom!(body: NaturalBody): Void {
-    let displacement: Vector3<Float, kilometer> = self.getDisplacementToEntity(body)
-    let distance_squared: Float<kilometer ^ 2> = displacement.squared_length()
-    let force_magnitude: Float<newton> = GRAVITATIONAL_CONSTANT * self.getMass() * body.getMass() / distance_squared
-    let force: Vector3<Float, newton> = displacement.normalized() * force_magnitude
-
-    self.applyForce!(force)
-  }
-}
-
-face Orbital has Physics {
-  fun getSMA(): Float<kilometer> => 384400 kilometer // TODO: Obtain the actual semimajor axis formula
-}
-
-face Gravitational has Orbital {
-  fun getParentBody(): Optional<Massive>
-
-  let .soiRadius: Float<kilometer>
-
-  fun calculateSOIRadius(): Float<kilometer> {
-    match self.getParentBody() {
-      case Some(body) { return self.getSMA() * self.getMassRatio(body) ^ (2.0 / 5.0)}
-      case None return inf kilometer
-      case else return nan kilometer
-    }
-  }
-
-  fun getSOIRadius(): Float<kilometer> => self.soiRadius
-}
-
-class NaturalBody has Named, Gravitational {
-  let .diameter: Float<kilometer>
-  weak let .parent_body: NaturalBody
-
-  new(
-  name: String = "",
-  mass: Float<kilogram> = 1 kilogram,
-  diameter: Float<kilometer> = 1 kilometer,
-  parent_body: Optional<NaturalBody> = None,
-  position: Point3<Float, kilometer> = (0, 0, 0) kilometer,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) {
-    self.name = name
-    self.mass = mass
-    self.diameter = diameter
-    match parent_body {
-      case Some(body) self.parent_body = body
-    }
-    self.position = position
-    self.velocity = velocity
-    self.acceleration = <0, 0, 0> (kilometer / second ^ 2)
-    self.soiRadius = self.calculateSOIRadius()
-  }
-
-  // Natural Body
-  fun getDiameter(): Float<kilometer> => self.diameter
-  fun printSummary(): Void {
-    print("${self.name}:")
-    print("  Mass: ${self.getMass()}")
-    print("  Diameter: ${self.getDiameter()}")
-    print("  SOI Radius: ${self.getSOIRadius()}")
-  }
-
-  // Gravitational
-  fun getParentBody(): Optional<Massive> => self.parent_body
-}
-
-class Star is NaturalBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_star: Optional<Star> = None, // TODO: Stars may be binary, but this only allows us to do a star-orbiting-star system, not a co-orbiting stars at the moment
-  position: Point3<Float, kilometer> = (0, 0, 0) kilometer,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is NaturalBody(name, mass, diameter, parent_star, position, velocity) { }
-}
-
-class Planet is NaturalBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_star: Star,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is NaturalBody(name, mass, diameter, Some(parent_star), position, velocity) { }
-}
-
-class DwarfPlanet is NaturalBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_star: Star,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is NaturalBody(name, mass, diameter, Some(parent_star), position, velocity) { }
-}
-
-class Moon is NaturalBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_body: NaturalBody,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is NaturalBody(name, mass, diameter, Some(parent_body), position, velocity) { }
-}
-
-class SmallBody is NaturalBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_body: NaturalBody,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is NaturalBody(name, mass, diameter, Some(parent_body), position, velocity) { }
-}
-
-face Durability {
-  let .durability: Float
-
-  fun degrade(): Void {}
-  fun repair(): Void {}
-}
-
 face Powered {
-  let .energyConsumption: Float<watt>
-
-  fun consumePower(): Void {}
+  let powerUsage: Float<watt>
 }
 
-face Consumption {
-  let .resourceUsage: Array<Float> // This should end up being a dict/struct of resource names and their usage amounts
+face Degradable {
+  let .durability: Int
 
-  fun consumeResources(): Void {}
+  fun degrade(): Void { self.durability-- }
+  fun repair(amount: Int): Void { self.durability += amount }
 }
 
-class System has Durability, Named {
-  new(name: String) {
+face Consumer {} // of non-electric resources
+
+class System has Degradable {
+  new() {
     self.durability = 100
-    self.name = name
   }
 }
 
-class Engine is System, has Consumption, Powered {
-  new(name: String) is System(name) {
-    self.resourceUsage = [1.0]
-    self.energyConsumption = 1 watt
+class LifeSupport is System, has Powered {
+  let h2o_usage: Float<kilogram / second>  = 1 (kilogram / second) // / 1 person
+  let food_usage: Float<kilogram / second> = 1 (kilogram / second) // / 1 person
+  let o2_usage: Float<kilogram / second>   = 1 (kilogram / second) // / 1 person
+
+  new() {
+    self.powerUsage = 75 watt
   }
 }
 
-// class ChemicalEngine is Engine {}
-// class NuclearEngine is Engine {}
-// class IonEngine is Engine {}
+class Generator is System {
+  let generationRate: Float<watt>
 
-class LifeSupport is System, has Consumption, Powered {
-  new(name: String) is System(name) {
-    self.resourceUsage = [1.0]
-    self.energyConsumption = 1 watt
+  new() {
+    self.generationRate = 100 watt
   }
 }
 
-class Storage is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
+class SolarGenerator is Generator {
+  new() {
   }
 }
 
-class Sensors is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-  }
-}
+class Outpost has Degradable {
+  let .generator: Generator
+  let .lifeSupport: LifeSupport
 
-class Comms is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-  }
-}
+  let .durability: Int
+  let .storedCharge: Float<watt * second>
+  let .h2o: Float<kilogram>
+  let .food: Float<kilogram>
+  let .o2: Float<kilogram>
 
-class Navigation is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-  }
-}
-
-face PowerGeneration {
-  let .powerGenerationRate: Float<watt / second>
-}
-
-class Generator is System, has PowerGeneration {
-  new(name: String, powerGenerationRate: Float<watt / second>) is System(name) {
-    self.powerGenerationRate = powerGenerationRate
-  }
-}
-
-// class NuclearGenerator is Generator {}
-// class SolarGenerator is Generator {}
-
-class Thermal is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-  }
-}
-
-class Weapon is System, has Powered, Consumption {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-    self.resourceUsage = [1.0]
-  }
-}
-
-// class BallisticWeapon is Weapon {}
-// class LaserWeapon is Weapon {}
-
-class Shield is System, has Powered {
-  new(name: String) is System(name) {
-    self.energyConsumption = 1 watt
-  }
-}
-
-class Armor is System {
-  new(name: String) is System(name) {}
-}
-
-class Chassis has Named {}
-
-class Vehicle {}
-
-class Ship is Vehicle {
-  let .engine: Engine // Main propulsion (rcs, sas possibly included or fully abstracted)
-  let .storage: Storage // Fuel, food, ammo, etc, customizable and partionable storage
-  let .comms: Comms // Need it to talk to folks
-  let .sensors: Sensors // Need it to scan planets, dodge asteroids, etc
-  let .navigation: Navigation // Need it to plot routes and setup recurring routes
-  let .generator: Generator // Need it to keep the lights on
-  let .thermals: Thermal // Need it to keep people from freezing or overheating, and electronics from freezing
-  let .shield: Optional<Shield> = None // Blocks laser weapons
-  let .armor: Optional<Armor> = None // Blocks ballistic weapons
-  let .weapon: Optional<Weapon> = None // Sometimes ya gotta fire first
-  let .lifeSupport: Optional<LifeSupport> = None // Food, water recycling, etc
-
-  new(
-  engine: Engine,
-  storage: Storage,
-  comms: Comms,
-  sensors: Sensors,
-  navigation: Navigation,
-  generator: Generator,
-  thermals: Thermal,
-  shield: Optional<Shield> = None,
-  armor: Optional<Armor> = None,
-  weapons: Optional<Weapon> = None,
-  lifeSupport: Optional<LifeSupport> = None
-  ) {
-    self.engine = engine
-    self.storage = storage
-    self.comms = comms
-    self.sensors = sensors
-    self.navigation = navigation
+  new(generator: Generator, lifeSupport: LifeSupport) {
     self.generator = generator
-    self.thermals = thermals
-    self.shield = shield
-    self.armor = armor
-    self.weapon = weapons
     self.lifeSupport = lifeSupport
+
+    self.durability = 100
+    self.storedCharge = 0 (watt * second)
+    self.h2o = 100 kilogram
+    self.food = 100 kilogram
+    self.o2 = 100 kilogram
+  }
+
+  fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
+    let people: Float = 10.0 // FIXME: Real people
+
+    self.storedCharge += self.generator.generationRate * deltaTime
+
+    self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
+    self.h2o -= self.lifeSupport.h2o_usage * deltaTime
+    self.food -= self.lifeSupport.food_usage * deltaTime
+    self.o2 -= self.lifeSupport.o2_usage * deltaTime
+  }
+
+  fun summarize(): Void {
+    print("STATUS")
+    print("  Charge: ${self.storedCharge}")
+    print("  h2o: ${self.h2o}")
+    print("  Food: ${self.food}")
+    print("  O2: ${self.o2}")
   }
 }
 
-/* 
-
-class Asteroid is SmallBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_body: NaturalBody,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is SmallBody(name, mass, diameter, Some(parent_body), position, velocity) { }
+class Station is Outpost {
+  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
 }
 
-class Comet is SmallBody {
-  new(
-  name: String,
-  mass: Float<kilogram>,
-  diameter: Float<kilometer>,
-  parent_body: NaturalBody,
-  position: Point3<Float, kilometer>,
-  velocity: Vector3<Float, kilometer / second> = <0, 0, 0> (kilometer / second)
-  ) is SmallBody(name, mass, diameter, Some(parent_body), position, velocity) { }
+class Base is Outpost {
+  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
 }
 
-*/
 
-let sol = Star("Sol", 1.9884e30 kilogram, 1.392e6 kilometer)
-let earth = Planet("Earth", 5.97e24 kilogram, 12756 kilometer, sol, (149593200, 0, 0) kilometer)
-let luna = Moon("Luna", 7.34e22 kilogram, 3474.8 kilometer, earth, (149977600, 0, 0) kilometer)
-let pluto = DwarfPlanet("Pluto", 1.303e22 kilogram, 2376.6 kilometer, sol, (-1.47730922e9, -4.182574868e9, 8.752154808e8) kilometer)
-let ceres = SmallBody("Ceres", 9.38416e20 kilogram, 939.4 kilometer, sol, (-3.559423585e8, 1.190030176e8, 6.926464763e7) kilometer)
-let hallesComet = SmallBody("Halley's Comet", 3.2e14 kilogram, 11 kilometer, sol, (-2.600907602e9, 2.540048592e9, -1.133650662e9) kilometer)
+/////////////////
 
-// let nonstellarBodies: Array<NaturalBody> = [earth, luna, pluto, ceres, hallesComet]
 
-sol.printSummary()
-earth.printSummary()
-luna.printSummary()
-pluto.printSummary()
-ceres.printSummary()
-hallesComet.printSummary()
+let lifeSupport_basic = LifeSupport()
+let solarPanels_basic = SolarGenerator()
 
-print("Distances: Sol to...")
-print("  Earth: ${sol.getDistanceToEntity(earth)}")
-print("  Luna: ${sol.getDistanceToEntity(luna)}")
-print("  Pluto: ${sol.getDistanceToEntity(pluto)}")
-print("  Ceres: ${sol.getDistanceToEntity(ceres)}")
-print("  Halley's Comet: ${sol.getDistanceToEntity(hallesComet)}")
+let base_basic = Base(solarPanels_basic, lifeSupport_basic)
+
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()
+base_basic.runMandatorySystems()
+base_basic.summarize()

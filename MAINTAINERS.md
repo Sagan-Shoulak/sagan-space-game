@@ -44,8 +44,9 @@ Bash environment so the native compiler is available.
 
 Set `SAGAN_EXECUTABLE` or `SAGAN_PACKAGE_INDEX` only for an explicit reviewed
 override. `SAGAN_BUILD_JOBS` controls the compiler build parallelism and
-defaults to `2`. A successful run prints Sol, Earth, Luna, Pluto, Ceres, and
-Halley's Comet summaries and distances, then exits zero.
+defaults to `2`. A successful run prints the base's initial status, advances
+its mandatory systems in 0.1-second steps, reaches 35 watt-seconds of stored
+charge with 98.6 kilograms each of water, food, and oxygen, then exits zero.
 The manifest currently names the package `Sandbox`, retained from the seed;
 rename it only after the owner chooses the game's package identity.
 
