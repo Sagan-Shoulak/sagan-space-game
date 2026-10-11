@@ -11,7 +11,14 @@ if [[ -z "${SAGAN_PACKAGE_INDEX:-}" ]]; then
 fi
 
 output="$("${SAGAN_EXECUTABLE:-sagan}" src/main.sagan)"
-for expected in "Sol:" "Earth:" "Luna:" "Pluto:" "Ceres:" "Halley's Comet:" "Distances: Sol to..."; do
+for expected in \
+  "STATUS" \
+  "Charge: 0 watt * second" \
+  "h2o: 100 kilogram" \
+  "Charge: 35 watt * second" \
+  "h2o: 98.6 kilogram" \
+  "Food: 98.6 kilogram" \
+  "O2: 98.6 kilogram"; do
   if [[ "$output" != *"$expected"* ]]; then
     echo "Missing Space Game seed output: $expected" >&2
     echo "$output" >&2
@@ -19,4 +26,4 @@ for expected in "Sol:" "Earth:" "Luna:" "Pluto:" "Ceres:" "Halley's Comet:" "Dis
   fi
 done
 
-echo "Space Game seed test passed: the pinned physics package ran the six-body summary."
+echo "Space Game seed test passed: the outpost resource summary reached its expected final state."

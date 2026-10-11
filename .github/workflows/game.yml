@@ -3,10 +3,10 @@ name: Space Game seed
 on:
   push:
     branches: [dev, main]
-    paths: [".github/workflows/game.yml", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
+    paths: [".github/workflows/game.yml", "scripts/**", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
   pull_request:
     branches: [dev, main]
-    paths: [".github/workflows/game.yml", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
+    paths: [".github/workflows/game.yml", "scripts/**", "src/**", "tests/**", "sagan.toml", "sagan.lock", "sagan-source-commit.txt", "sagan-physics-commit.txt"]
   workflow_dispatch:
 
 permissions:
@@ -74,6 +74,8 @@ jobs:
         run: |
           export SAGAN_PACKAGE_INDEX="$GITHUB_WORKSPACE/physics/libraries/index.tsv"
           export SAGAN_EXECUTABLE="$GITHUB_WORKSPACE/sagan-source/bin/sagan"
+          bash -n scripts/resolve-sagan.sh scripts/resolve-physics.sh scripts/run.sh
+          bash scripts/run.sh
           bash tests/integration/game_seed_test.sh
       - name: Run game seed (Windows)
         if: runner.os == 'Windows'
@@ -83,4 +85,6 @@ jobs:
           root="$(cygpath -u "$GITHUB_WORKSPACE")"
           export SAGAN_PACKAGE_INDEX="$root/physics/libraries/index.tsv"
           export SAGAN_EXECUTABLE="$root/sagan-source/bin/sagan.exe"
+          bash -n scripts/resolve-sagan.sh scripts/resolve-physics.sh scripts/run.sh
+          bash scripts/run.sh
           bash tests/integration/game_seed_test.sh
