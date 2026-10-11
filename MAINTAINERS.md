@@ -24,20 +24,28 @@ are a temporary CI path while released package
 consumption is paused; they do not certify a game release. Keep the lockfile
 and package versions compatible when changing either pin.
 
-Install or build Sagan and make a compatible `sagan-physics` package available.
-On the current Windows development machine, from this candidate's root in
-Git Bash, the verified rehearsal command was:
+From the repository root in Git Bash, run the pinned local compiler and physics
+package with:
 
 ```bash
-PATH=/c/msys64/ucrt64/bin:$PATH /c/Users/joeps/coding/sagan/bin/sagan.exe src/main.sagan
+bash scripts/run.sh
 ```
 
-It printed Sol, Earth, Luna, Pluto, Ceres, and Halley's Comet summaries and
-distances, then exited zero. Invoking the executable without the MinGW
-compiler on PATH instead failed to start its native process (Windows error
-2); that was an environment failure, not a Sagan diagnostic. On a system with
-a properly installed Sagan CLI and physics package, the intended command is
-`sagan src/main.sagan`; it still needs independent cross-platform validation.
+On the first run, `scripts/resolve-sagan.sh` clones the exact commit in
+`sagan-source-commit.txt`, builds it under ignored
+`build/sagan-pinned-<commit>/`, and reuses that compiler on later runs.
+`scripts/resolve-physics.sh` likewise clones the exact commit in
+`sagan-physics-commit.txt` under ignored
+`build/sagan-physics-pinned-<commit>/` and supplies its package catalog. An
+incomplete cache is preserved with an `.incomplete-<timestamp>` suffix rather
+than overwritten. The first run requires network access, Git, Make, and the
+compiler prerequisites for Sagan. On Windows, run from an MSYS2 UCRT64 Git
+Bash environment so the native compiler is available.
+
+Set `SAGAN_EXECUTABLE` or `SAGAN_PACKAGE_INDEX` only for an explicit reviewed
+override. `SAGAN_BUILD_JOBS` controls the compiler build parallelism and
+defaults to `2`. A successful run prints Sol, Earth, Luna, Pluto, Ceres, and
+Halley's Comet summaries and distances, then exits zero.
 The manifest currently names the package `Sandbox`, retained from the seed;
 rename it only after the owner chooses the game's package identity.
 
