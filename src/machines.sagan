@@ -4,10 +4,18 @@ import ResourceCatalog from resources
 import MaterialStack from resources
 import MaterialInventory from resources
 import EnergyStore from resources
+import RegolithStockpile from resources
+import H2O from resources
 import REGOLITH from resources
+import IRON from resources
+import CARBON from resources
+import ALUMINUM from resources
+import COPPER from resources
+import SILICON from resources
 
 import RecipeDefinition from recipes
 import RecipeCatalog from recipes
+import MaterialAmounts from recipes
 
 const MACHINE_IDLE: Int64 = 0
 const MACHINE_PROCESSING: Int64 = 1
@@ -198,11 +206,113 @@ class MaintenancePartsFabricator is ProcessingMachine {
   fun name(): String => "Maintenance-parts fabricator"
 }
 
+/// Composition-driven dry separation. The power and throughput are provisional
+/// gameplay values for an industrial-scale magnetic/electrostatic separator.
+class RegolithSifter {
+  let batch_mass_value: Float64<kilogram> = 100.0 kilogram
+  let throughput_value: Float64<kilogram / second> = 0.2 (kilogram / second)
+  let power_demand_value: Float64<watt> = 150000.0 watt
+  let state_value: Int64 = MACHINE_IDLE
+  let processed_mass_value: Float64<kilogram> = 0.0 kilogram
+  let outputs_value: MaterialAmounts = MaterialAmounts()
+  let source_site_id_value: String = ""
+
+  fun id(): String => "regolith_sifter"
+  fun name(): String => "Regolith sifter"
+  fun batch_mass(): Float64<kilogram> => self.batch_mass_value
+  fun throughput(): Float64<kilogram / second> => self.throughput_value
+  fun power_demand(): Float64<watt> => self.power_demand_value
+  fun energy_per_mass(): Float64<watt * second / kilogram> =>
+    self.power_demand_value / self.throughput_value
+  fun state(): Int64 => self.state_value
+  fun is_idle(): Bool => self.state_value == MACHINE_IDLE
+  fun is_processing(): Bool => self.state_value == MACHINE_PROCESSING
+  fun output_blocked(): Bool => self.state_value == MACHINE_OUTPUT_BLOCKED
+  fun processed_mass(): Float64<kilogram> => self.processed_mass_value
+  fun progress(): Float64 => self.processed_mass_value / self.batch_mass_value
+  fun source_site_id(): String => self.source_site_id_value
+  fun outputs(): MaterialAmounts => self.outputs_value
+
+  fun reserve_input!(stockpile: RegolithStockpile): Bool {
+    if self.state_value != MACHINE_IDLE { return false }
+    if stockpile.remove!(self.batch_mass_value) == false { return false }
+    let catalog = ResourceCatalog()
+    let composition = stockpile.composition()
+    self.outputs_value = MaterialAmounts(
+      self.batch_mass_value * composition.fraction(catalog.definition(H2O)),
+      0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+      self.batch_mass_value * composition.fraction(catalog.definition(IRON)),
+      self.batch_mass_value * composition.fraction(catalog.definition(CARBON)),
+      0.0 kilogram,
+      self.batch_mass_value * composition.fraction(catalog.definition(ALUMINUM)),
+      self.batch_mass_value * composition.fraction(catalog.definition(COPPER)),
+      self.batch_mass_value * composition.fraction(catalog.definition(SILICON)),
+      0.0 kilogram, 0.0 kilogram, 0.0 kilogram)
+    self.source_site_id_value = stockpile.composition().source_site_id()
+    self.processed_mass_value = 0.0 kilogram
+    self.state_value = MACHINE_PROCESSING
+    return true
+  }
+
+  fun output_can_fit(inventory: MaterialInventory): Bool =>
+    inventory.available_capacity() >= self.outputs_value.total_mass()
+
+  fun deposit_outputs!(inventory: MaterialInventory): Bool {
+    if self.state_value != MACHINE_OUTPUT_BLOCKED { return false }
+    if self.output_can_fit(inventory) == false { return false }
+    let catalog = ResourceCatalog()
+    let index: Int64 = 0
+    while index < catalog.count() {
+      let definition = catalog.definition(index)
+      let produced = self.outputs_value.amount(definition)
+      if produced > 0.0 kilogram {
+        assert(inventory.add!(MaterialStack(definition, produced)),
+               "Separated regolith output no longer fit after capacity check")
+      }
+      index += 1
+    }
+    self.outputs_value = MaterialAmounts()
+    self.source_site_id_value = ""
+    self.processed_mass_value = 0.0 kilogram
+    self.state_value = MACHINE_IDLE
+    return true
+  }
+
+  fun update!(delta_time: Float64<second>, stockpile: RegolithStockpile,
+              inventory: MaterialInventory, energy: EnergyStore): Void {
+    assert(delta_time >= 0.0 second, "Sifter update time must be non-negative")
+
+    if self.state_value == MACHINE_OUTPUT_BLOCKED {
+      self.deposit_outputs!(inventory)
+      return
+    }
+
+    if self.state_value == MACHINE_IDLE {
+      if self.reserve_input!(stockpile) == false { return }
+    }
+
+    let remaining_mass = self.batch_mass_value - self.processed_mass_value
+    let remaining_time = remaining_mass / self.throughput_value
+    let operating_time = delta_time
+    if operating_time > remaining_time { operating_time = remaining_time }
+    let required_energy = self.power_demand_value * operating_time
+    if energy.consume!(required_energy) == false { return }
+
+    self.processed_mass_value += self.throughput_value * operating_time
+    if self.processed_mass_value >= self.batch_mass_value {
+      self.processed_mass_value = self.batch_mass_value
+      self.state_value = MACHINE_OUTPUT_BLOCKED
+      self.deposit_outputs!(inventory)
+    }
+  }
+}
+
 export ProcessingMachine
 export Steelworks
 export PolymerPlant
 export ElectronicsFabricator
 export MaintenancePartsFabricator
+export RegolithSifter
 export MACHINE_IDLE
 export MACHINE_PROCESSING
 export MACHINE_OUTPUT_BLOCKED

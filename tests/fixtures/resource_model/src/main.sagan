@@ -27,6 +27,7 @@ import Steelworks from machines
 import PolymerPlant from machines
 import ElectronicsFabricator from machines
 import MaintenancePartsFabricator from machines
+import RegolithSifter from machines
 
 let catalog = ResourceCatalog()
 let h2o = catalog.definition(H2O)
@@ -207,5 +208,27 @@ assert(production_parts.power_demand() == 50000.0 watt,
        "Maintenance-parts fabrication has a concrete power demand")
 assert(production_parts.recipe().id() == "maintenance_parts",
        "Maintenance-parts fabricator carries its concrete recipe")
+
+let sifter_stockpile = RegolithStockpile(site_a, 200.0 kilogram)
+let sifter_inventory = MaterialInventory(100.0 kilogram)
+let sifter_energy = EnergyStore(
+  80000000.0 (watt * second), 80000000.0 (watt * second))
+let sifter = RegolithSifter()
+sifter.update!(250.0 second, sifter_stockpile, sifter_inventory, sifter_energy)
+assert(sifter.is_processing(), "A partial base tick leaves sifting in progress")
+assert(sifter_stockpile.amount() == 100.0 kilogram,
+       "The sifter reserves one complete source batch")
+assert(sifter.source_site_id() == "test.site_a",
+       "The active sifter retains the source composition identity")
+sifter.update!(250.0 second, sifter_stockpile, sifter_inventory, sifter_energy)
+assert(sifter.is_idle(), "A separated batch deposits and returns to idle")
+assert(sifter_inventory.stored_mass() == 100.0 kilogram,
+       "Sifting accounts for the complete regolith mass")
+assert(sifter_inventory.amount(h2o) == 10.0 kilogram,
+       "The sifter deposits the source H2O proportion")
+assert(sifter_inventory.amount(catalog.definition(IRON)) == 20.0 kilogram,
+       "The sifter deposits immediately usable iron")
+assert(sifter_energy.charge() == 5000000.0 (watt * second),
+       "Sifting consumes its concrete machine energy")
 
 print("Resource model test passed")
