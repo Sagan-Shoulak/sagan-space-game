@@ -1,0 +1,120 @@
+module main
+
+import ResourceCatalog from resources
+import MaterialStack from resources
+import MaterialInventory from resources
+import EnergyStore from resources
+import RegolithComposition from resources
+import RegolithStockpile from resources
+
+import H2O from resources
+import HYDROGEN from resources
+import IRON from resources
+import CARBON from resources
+import REGOLITH from resources
+import STEEL from resources
+import COPPER from resources
+import POLYMER from resources
+import MAINTENANCE_PARTS from resources
+
+import MaterialAmounts from recipes
+import RecipeDefinition from recipes
+import RecipeCatalog from recipes
+import separate_regolith from recipes
+
+let catalog = ResourceCatalog()
+let h2o = catalog.definition(H2O)
+let steel = catalog.definition(STEEL)
+let parts = catalog.definition(MAINTENANCE_PARTS)
+
+assert(h2o.id() == "h2o", "H2O has a stable save identity")
+assert(h2o.name() == "H2O", "Ice and water share the H2O definition")
+assert(parts.id() == "maintenance_parts", "Maintenance parts are one generic resource")
+
+let inventory = MaterialInventory(100.0 kilogram)
+assert(inventory.add!(MaterialStack(h2o, 40.0 kilogram)), "H2O fits in storage")
+assert(inventory.add!(MaterialStack(steel, 25.0 kilogram)), "Steel fits in storage")
+assert(inventory.stored_mass() == 65.0 kilogram, "Inventory totals material mass")
+assert(inventory.contains(h2o, 30.0 kilogram), "Inventory can answer availability")
+assert(inventory.remove!(h2o, 15.0 kilogram), "Available material can be removed")
+assert(inventory.amount(h2o) == 25.0 kilogram, "Removal updates stored material")
+assert(inventory.remove!(h2o, 30.0 kilogram) == false,
+       "Inventory rejects insufficient resources")
+assert(inventory.add!(MaterialStack(parts, 80.0 kilogram)) == false,
+       "Inventory rejects additions beyond capacity")
+assert(inventory.add!(MaterialStack(catalog.definition(REGOLITH), 1.0 kilogram)) == false,
+       "Regolith must retain its source composition in a stockpile")
+
+let battery = EnergyStore(1000.0 (watt * second), 400.0 (watt * second))
+assert(battery.add!(250.0 (watt * second)), "Energy can be stored")
+assert(battery.consume!(100.0 (watt * second)), "Stored energy can be consumed")
+assert(battery.charge() == 550.0 (watt * second), "Energy is tracked separately")
+assert(battery.add!(500.0 (watt * second)) == false,
+       "Energy storage enforces its own capacity")
+
+// Synthetic proportions test behavior only; they are not planetary data.
+let site_a = RegolithComposition(
+  "test.site_a", 0.10, 0.20, 0.10, 0.20, 0.10, 0.30)
+let site_b = RegolithComposition(
+  "test.site_b", 0.05, 0.25, 0.05, 0.15, 0.20, 0.30)
+let local_regolith = RegolithStockpile(site_a, 500.0 kilogram)
+let more_local_regolith = RegolithStockpile(site_a, 50.0 kilogram)
+let imported_regolith = RegolithStockpile(site_b, 100.0 kilogram)
+
+assert(local_regolith.same_source(more_local_regolith),
+       "Local regolith batches share one site composition")
+assert(local_regolith.same_source(imported_regolith) == false,
+       "Imported regolith retains its source composition")
+assert(site_a.fraction(catalog.definition(IRON)) == 0.20,
+       "Sifting exposes immediately usable constituent materials")
+assert(local_regolith.remove!(125.0 kilogram), "Regolith can be transported out")
+assert(local_regolith.amount() == 375.0 kilogram, "Transport reduces the source stockpile")
+
+let separated = separate_regolith(site_a, 100.0 kilogram)
+assert(separated.total_mass() == 100.0 kilogram,
+       "Sifting separates the complete regolith mass")
+assert(separated.amount(h2o) == 10.0 kilogram,
+       "Sifting uses the source site's H2O proportion")
+assert(separated.amount(catalog.definition(IRON)) == 20.0 kilogram,
+       "Sifting produces immediately usable iron")
+
+// Synthetic equal-mass transformation verifies the passive recipe contract;
+// the real recipe ratios require owner review before being cataloged.
+let test_recipe = RecipeDefinition(
+  "test.material_transform", "Synthetic material transform",
+  MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                  0.0 kilogram, 0.0 kilogram, 2.0 kilogram, 1.0 kilogram),
+  MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                  0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                  3.0 kilogram))
+assert(test_recipe.inputs().amount(catalog.definition(IRON)) == 2.0 kilogram,
+       "Recipes expose material inputs")
+assert(test_recipe.outputs().amount(steel) == 3.0 kilogram,
+       "Recipes expose material outputs")
+
+let recipes = RecipeCatalog()
+let steel_recipe = recipes.steel()
+assert(steel_recipe.inputs().amount(catalog.definition(IRON)) == 99.0 kilogram,
+       "Steel uses a rounded carbon-steel mass ratio")
+assert(steel_recipe.outputs().amount(steel) == 100.0 kilogram,
+       "Steel recipe conserves its complete mass")
+
+let polymer_recipe = recipes.polymer()
+assert(polymer_recipe.inputs().amount(catalog.definition(HYDROGEN)) == 14.0 kilogram,
+       "Polymer follows rounded polyethylene hydrogen content")
+assert(polymer_recipe.inputs().amount(catalog.definition(CARBON)) == 86.0 kilogram,
+       "Polymer follows rounded polyethylene carbon content")
+
+let electronics_recipe = recipes.electronic_components()
+assert(electronics_recipe.inputs().amount(catalog.definition(COPPER)) == 22.0 kilogram,
+       "Electronic components retain substantial copper content")
+assert(electronics_recipe.inputs().amount(catalog.definition(POLYMER)) == 33.0 kilogram,
+       "Electronic components include represented substrate material")
+
+let parts_recipe = recipes.maintenance_parts()
+assert(parts_recipe.inputs().amount(steel) == 50.0 kilogram,
+       "Maintenance parts are primarily steel")
+assert(parts_recipe.outputs().amount(parts) == 100.0 kilogram,
+       "Maintenance parts recipe conserves its complete mass")
+
+print("Resource model test passed")
