@@ -1,0 +1,166 @@
+module recipes
+
+import ResourceDefinition from resources
+import RegolithComposition from resources
+
+import H2O from resources
+import OXYGEN from resources
+import HYDROGEN from resources
+import FOOD from resources
+import CARBON_DIOXIDE from resources
+import REGOLITH from resources
+import IRON from resources
+import CARBON from resources
+import STEEL from resources
+import ALUMINUM from resources
+import COPPER from resources
+import SILICON from resources
+import POLYMER from resources
+import ELECTRONIC_COMPONENTS from resources
+import MAINTENANCE_PARTS from resources
+
+/// A typed material manifest shared by recipe inputs, recipe outputs, and
+/// composition-driven separation results.
+class MaterialAmounts {
+  let values: Array<Float64<kilogram>>
+
+  new(h2o: Float64<kilogram> = 0.0 kilogram,
+      oxygen: Float64<kilogram> = 0.0 kilogram,
+      hydrogen: Float64<kilogram> = 0.0 kilogram,
+      food: Float64<kilogram> = 0.0 kilogram,
+      carbon_dioxide: Float64<kilogram> = 0.0 kilogram,
+      regolith: Float64<kilogram> = 0.0 kilogram,
+      iron: Float64<kilogram> = 0.0 kilogram,
+      carbon: Float64<kilogram> = 0.0 kilogram,
+      steel: Float64<kilogram> = 0.0 kilogram,
+      aluminum: Float64<kilogram> = 0.0 kilogram,
+      copper: Float64<kilogram> = 0.0 kilogram,
+      silicon: Float64<kilogram> = 0.0 kilogram,
+      polymer: Float64<kilogram> = 0.0 kilogram,
+      electronic_components: Float64<kilogram> = 0.0 kilogram,
+      maintenance_parts: Float64<kilogram> = 0.0 kilogram) {
+    assert(h2o >= 0.0 kilogram and oxygen >= 0.0 kilogram and
+           hydrogen >= 0.0 kilogram and food >= 0.0 kilogram and
+           carbon_dioxide >= 0.0 kilogram and regolith >= 0.0 kilogram and
+           iron >= 0.0 kilogram and carbon >= 0.0 kilogram and
+           steel >= 0.0 kilogram and aluminum >= 0.0 kilogram and
+           copper >= 0.0 kilogram and silicon >= 0.0 kilogram and
+           polymer >= 0.0 kilogram and electronic_components >= 0.0 kilogram and
+           maintenance_parts >= 0.0 kilogram,
+           "Material amounts must be non-negative")
+    self.values = [
+      h2o, oxygen, hydrogen, food, carbon_dioxide, regolith, iron, carbon,
+      steel, aluminum, copper, silicon, polymer, electronic_components,
+      maintenance_parts
+    ]
+  }
+
+  fun amount(definition: ResourceDefinition): Float64<kilogram> =>
+    self.values[definition.index()]
+
+  fun total_mass(): Float64<kilogram> {
+    let total: Float64<kilogram> = 0.0 kilogram
+    let index: Int64 = 0
+    while index < 15 {
+      total += self.values[index]
+      index += 1
+    }
+    return total
+  }
+}
+
+/// Immutable material transformation. Processing time and power belong to the
+/// machine performing the recipe, not to this definition.
+class RecipeDefinition {
+  let id_value: String
+  let name_value: String
+  let inputs_value: MaterialAmounts
+  let outputs_value: MaterialAmounts
+
+  new(id: String, name: String, inputs: MaterialAmounts, outputs: MaterialAmounts) {
+    let difference = inputs.total_mass() - outputs.total_mass()
+    let tolerance = 0.000000001 kilogram
+    assert(difference >= 0.0 kilogram - tolerance and difference <= tolerance,
+           "Recipe inputs and outputs must conserve mass")
+    self.id_value = id
+    self.name_value = name
+    self.inputs_value = inputs
+    self.outputs_value = outputs
+  }
+
+  fun id(): String => self.id_value
+  fun name(): String => self.name_value
+  fun inputs(): MaterialAmounts => self.inputs_value
+  fun outputs(): MaterialAmounts => self.outputs_value
+}
+
+/// Rounded 100-kilogram reference batches. Missing alloying elements, solder,
+/// glass, ceramics, and trace electronic materials are intentionally omitted.
+class RecipeCatalog {
+  /// A broadly useful carbon-steel abstraction.
+  fun steel(): RecipeDefinition => RecipeDefinition(
+    "steel", "Steel",
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 99.0 kilogram, 1.0 kilogram),
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    100.0 kilogram))
+
+  /// Polyethylene-like CH2 mass proportions, rounded to whole kilograms.
+  fun polymer(): RecipeDefinition => RecipeDefinition(
+    "polymer", "Polymer",
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 14.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 86.0 kilogram),
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    100.0 kilogram))
+
+  /// PCB-inspired composition reduced to materials represented by the game.
+  fun electronic_components(): RecipeDefinition => RecipeDefinition(
+    "electronic_components", "Electronic components",
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 9.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 2.0 kilogram, 22.0 kilogram, 34.0 kilogram,
+                    33.0 kilogram),
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 100.0 kilogram))
+
+  /// General-purpose replacement stock; this is a gameplay abstraction.
+  fun maintenance_parts(): RecipeDefinition => RecipeDefinition(
+    "maintenance_parts", "Maintenance parts",
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    50.0 kilogram, 20.0 kilogram, 10.0 kilogram, 0.0 kilogram,
+                    10.0 kilogram, 10.0 kilogram),
+    MaterialAmounts(0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+                    0.0 kilogram, 0.0 kilogram, 100.0 kilogram))
+}
+
+/// A separation manifest derived from a source site's complete regolith
+/// composition. It calculates materials only; a base-owned machine will later
+/// decide when to consume the stockpile and deposit these outputs.
+fun separate_regolith(composition: RegolithComposition,
+                      input_mass: Float64<kilogram>): MaterialAmounts {
+  assert(input_mass >= 0.0 kilogram, "Regolith input mass must be non-negative")
+  return MaterialAmounts(
+    input_mass * composition.fraction(ResourceDefinition(H2O, "h2o", "H2O")),
+    0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
+    input_mass * composition.fraction(ResourceDefinition(IRON, "iron", "Iron")),
+    input_mass * composition.fraction(ResourceDefinition(CARBON, "carbon", "Carbon")),
+    0.0 kilogram,
+    input_mass * composition.fraction(ResourceDefinition(ALUMINUM, "aluminum", "Aluminum")),
+    input_mass * composition.fraction(ResourceDefinition(COPPER, "copper", "Copper")),
+    input_mass * composition.fraction(ResourceDefinition(SILICON, "silicon", "Silicon")),
+    0.0 kilogram, 0.0 kilogram, 0.0 kilogram
+  )
+}
+
+export MaterialAmounts
+export RecipeDefinition
+export RecipeCatalog
+export separate_regolith
