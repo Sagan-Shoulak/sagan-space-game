@@ -41,4 +41,9 @@ ignored caches, creates one package catalog, emits the application C++, links
 the renderer's native host against pinned SDL, and runs from the renderer root
 so its reviewed shaders and planetary assets remain available. These exact
 source pins are development integration inputs, not released-package evidence.
+On macOS the host uses SDL's Metal backend and renderer-owned MSL shaders.
+The launcher builds the renderer's pinned SDL source and embeds its library
+search path in the native executable. `scripts/run.sh --build-only` builds
+without opening a window; the graphical integration check then captures the
+fixed local scene and verifies that camera input leaves it unchanged.
 See [MAINTAINERS.md](MAINTAINERS.md) for the exact test and recovery path.
