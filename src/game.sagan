@@ -3,7 +3,10 @@ module game
 import open from render.ui
 import poll from render.ui
 import close from render.ui
-import elapsed_seconds from render.ui
+
+import duration from time.duration
+import FixedStepClock from time.game
+import frame_clock from time.game
 
 import LifeSupport from systems
 import SolarGenerator from systems
@@ -16,23 +19,27 @@ import draw_shackleton_view from shackleton_view
 // Composition root: gameplay state stays separate from presentation state.
 let base = Base(SolarGenerator(), LifeSupport())
 let base_ui = BaseUIState()
+let display_clock = frame_clock()
+let gameplay_clock = FixedStepClock(duration(1.0 second), 8)
 
 if open("Space Game - Shackleton Base", 1280, 800) {
   let running = true
-  let simulated_second = 0.0
   while running {
     if poll() == false { running = false }
     if running {
-      let now: Float64 = elapsed_seconds()
+      let frame = display_clock.tick!()
+      let now: Float64 = frame.elapsed().seconds() / (1.0 second)
 
       // Rendering-owned input and temporary presentation data.
       update_base_ui(base_ui, now)
 
       // Owner-authored gameplay model. The presentation adapter will replace
       // the UI fixture when the real resource contracts are ready.
-      while simulated_second + 1.0 <= now {
-        base.runMandatorySystems(1.0 second)
-        simulated_second = simulated_second + 1.0
+      let gameplay_steps = gameplay_clock.advance!(frame.delta())
+      let gameplay_step: Int64 = 0
+      while gameplay_step < gameplay_steps.steps() {
+        base.runMandatorySystems(gameplay_steps.step_seconds())
+        gameplay_step += 1
       }
 
       draw_shackleton_view(base_ui)
