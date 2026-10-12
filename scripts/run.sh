@@ -9,7 +9,9 @@ mkdir -p build/game build/tmp
 
 sagan_executable="$(bash scripts/resolve-sagan.sh)"
 render_root="$(bash scripts/resolve-render.sh)"
-export SAGAN_PACKAGE_INDEX="$(bash scripts/resolve-packages.sh)"
+if [[ -z "${SAGAN_PACKAGE_INDEX:-}" ]]; then
+  export SAGAN_PACKAGE_INDEX="$(bash scripts/resolve-packages.sh)"
+fi
 
 "$sagan_executable" --emit-cpp-package . build/game/program.cpp
 

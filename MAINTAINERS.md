@@ -18,8 +18,8 @@ release.
 
 Independent seed CI checks out exact language, physics, and renderer commits
 from the three `sagan-*-commit.txt` files, builds the compiler, emits the
-windowed application package, then runs the standalone numeric fixture in
-`src/seed_test.sagan` on Linux and Windows using
+windowed `src/game.sagan` application package, then runs the numeric seed in
+`src/main.sagan` directly on Linux and Windows using
 `bash tests/integration/game_seed_test.sh`. These source pins
 are a temporary CI path while released package
 consumption is paused; they do not certify a game release. Keep the lockfile
@@ -51,8 +51,9 @@ Set `SAGAN_EXECUTABLE`, `SAGAN_PACKAGE_INDEX`,
 `SAGAN_PHYSICS_SOURCE_ROOT`, or `SAGAN_RENDER_SOURCE_ROOT` only for an explicit
 reviewed override. Every source-root override must match its exact pin.
 `SAGAN_BUILD_JOBS` controls compiler build parallelism and defaults to `2`.
-A successful normal run opens directly into the fixed local Shackleton Base
-view and continues until the window closes. The standalone numeric fixture
+A successful `bash scripts/run.sh` opens the separate `src/game.sagan` entry
+directly into the fixed local Shackleton Base view and continues until the
+window closes. The standalone numeric fixture
 still advances fourteen 0.1-second steps, reaches 35 watt-seconds of stored
 charge with 86 kilograms each of water, food, and oxygen, then exits zero.
 The manifest currently names the package `Sandbox`, retained from the seed;

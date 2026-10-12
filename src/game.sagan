@@ -1,0 +1,250 @@
+module game
+
+import open from render.ui
+import poll from render.ui
+import close from render.ui
+import width from render.ui
+import height from render.ui
+import begin from render.ui
+import fill from render.ui
+import text from render.ui
+import mesh_sphere from render.ui
+import mesh_box from render.ui
+import present from render.ui
+import elapsed_seconds from render.ui
+
+face Powered {
+  let powerUsage: Float<watt>
+}
+
+face Degradable {
+  let .durability: Int
+  fun degrade(): Void { self.durability-- }
+  fun repair(amount: Int): Void { self.durability += amount }
+}
+
+class System has Degradable {
+  new() { self.durability = 100 }
+}
+
+class LifeSupport is System, has Powered {
+  let h2o_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  let food_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  let o2_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  new() { self.powerUsage = 75 watt }
+}
+
+class Generator is System {
+  let generationRate: Float<watt>
+  new() { self.generationRate = 100 watt }
+}
+
+class SolarGenerator is Generator { new() {} }
+
+class Base has Degradable {
+  let .generator: Generator
+  let .lifeSupport: LifeSupport
+  let .durability: Int
+  let .storedCharge: Float<watt * second>
+  let .h2o: Float<kilogram>
+  let .food: Float<kilogram>
+  let .o2: Float<kilogram>
+
+  new(generator: Generator, lifeSupport: LifeSupport) {
+    self.generator = generator
+    self.lifeSupport = lifeSupport
+    self.durability = 100
+    self.storedCharge = 0 (watt * second)
+    self.h2o = 100 kilogram
+    self.food = 100 kilogram
+    self.o2 = 100 kilogram
+  }
+
+  fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
+    let people: Float<person> = 10.0 person // FIXME: Real people
+    self.storedCharge += self.generator.generationRate * deltaTime
+    self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
+    self.h2o -= self.lifeSupport.h2o_usage * people * deltaTime
+    self.food -= self.lifeSupport.food_usage * people * deltaTime
+    self.o2 -= self.lifeSupport.o2_usage * people * deltaTime
+  }
+
+  fun durability_value(): Int => self.durability
+  fun charge(): Float<watt * second> => self.storedCharge
+  fun water(): Float<kilogram> => self.h2o
+  fun food_supply(): Float<kilogram> => self.food
+  fun oxygen(): Float<kilogram> => self.o2
+}
+
+// Keep this local scene far from the world origin so the first game view uses
+// the renderer's camera-relative precision path from the beginning.
+const SHACKLETON_ORIGIN: Float64<meter> = 1e12 kilometer
+
+fun draw_box(viewport_x: Float64, viewport_y: Float64,
+             viewport_width: Float64, viewport_height: Float64,
+             camera_x: Float64<meter>, camera_y: Float64<meter>,
+             camera_z: Float64<meter>, forward_x: Float64,
+             forward_y: Float64, forward_z: Float64,
+             up_x: Float64, up_y: Float64, up_z: Float64,
+             x: Float64<meter>, y: Float64<meter>, z: Float64<meter>,
+             half_x: Float64<meter>, half_y: Float64<meter>,
+             half_z: Float64<meter>, yaw: Float64,
+             appearance: Int64): Void {
+  mesh_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.8726646259971648,
+           1.0 meter, 4000000.0 meter,
+           SHACKLETON_ORIGIN + x, SHACKLETON_ORIGIN + y,
+           SHACKLETON_ORIGIN + z,
+           half_x, half_y, half_z, yaw, appearance)
+}
+
+fun draw_sphere(viewport_x: Float64, viewport_y: Float64,
+                viewport_width: Float64, viewport_height: Float64,
+                camera_x: Float64<meter>, camera_y: Float64<meter>,
+                camera_z: Float64<meter>, forward_x: Float64,
+                forward_y: Float64, forward_z: Float64,
+                up_x: Float64, up_y: Float64, up_z: Float64,
+                x: Float64<meter>, y: Float64<meter>, z: Float64<meter>,
+                radius: Float64<meter>, appearance: Int64): Void {
+  mesh_sphere(viewport_x, viewport_y, viewport_width, viewport_height,
+              camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+              up_x, up_y, up_z, 0.8726646259971648,
+              1.0 meter, 4000000.0 meter,
+              SHACKLETON_ORIGIN + x, SHACKLETON_ORIGIN + y,
+              SHACKLETON_ORIGIN + z, radius, appearance, false)
+}
+
+fun compose(base: Base): Void {
+  let window_width = width()
+  let window_height = height()
+  let sidebar_width = 310.0
+  let viewport_x = 20.0
+  let viewport_y = 68.0
+  let viewport_width = window_width - sidebar_width - 50.0
+  let viewport_height = window_height - 102.0
+
+  // Fixed oblique camera copied from the renderer's local-surface starting
+  // composition. This first slice deliberately exposes no orbit or zoom input.
+  let forward_x = 0.0 - 0.5704
+  let forward_y = 0.0 - 0.5312
+  let forward_z = 0.0 - 0.6288
+  let up_x = 0.0 - 0.4600
+  let up_y = 0.0 - 0.4284
+  let up_z = 0.7776
+  let camera_x = SHACKLETON_ORIGIN + 338.6 meter
+  let camera_y = SHACKLETON_ORIGIN + 324.3 meter
+  let camera_z = SHACKLETON_ORIGIN + 393.9 meter
+
+  begin()
+  fill(0.0, 0.0, window_width, window_height, 7, 17, 31)
+  text(20.0, 18.0, "SHACKLETON BASE", 16.0, 245, 249, 255)
+  text(20.0, 43.0, "LOCAL OPERATIONS VIEW", 10.0, 142, 203, 255)
+  fill(viewport_x, viewport_y, viewport_width, viewport_height, 2, 6, 11)
+
+  // Local tangent patch and landing pad.
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter, 0.0 meter, 0.0 meter,
+           520.0 meter, 420.0 meter, 5.0 meter, 0.0, 10)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 115.0 meter, 70.0 meter, 6.0 meter,
+           72.0 meter, 72.0 meter, 1.0 meter, 0.0, 11)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 115.0 meter, 70.0 meter, 7.5 meter,
+           5.0 meter, 48.0 meter, 0.6 meter, 0.0, 20)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 115.0 meter, 70.0 meter, 7.5 meter,
+           48.0 meter, 5.0 meter, 0.6 meter, 0.0, 21)
+
+  // Habitat cluster.
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter - 95.0 meter, 25.0 meter,
+           19.0 meter, 54.0 meter, 25.0 meter, 14.0 meter, -0.18, 12)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter - 130.0 meter,
+           0.0 meter - 55.0 meter, 16.0 meter,
+           38.0 meter, 22.0 meter, 11.0 meter, 0.25, 12)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter - 110.0 meter,
+           0.0 meter - 18.0 meter, 13.0 meter,
+           10.0 meter, 38.0 meter, 7.0 meter, 0.15, 13)
+  draw_sphere(viewport_x, viewport_y, viewport_width, viewport_height,
+              camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+              up_x, up_y, up_z, 0.0 meter - 70.0 meter, 18.0 meter,
+              31.0 meter, 17.0 meter, 3)
+
+  // Power array and utility mast. Communications remain abstracted gameplay;
+  // the mast is only a visible utility fixture.
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter - 10.0 meter,
+           0.0 meter - 135.0 meter, 9.0 meter,
+           92.0 meter, 28.0 meter, 2.0 meter, -0.12, 14)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 0.0 meter - 205.0 meter, 85.0 meter,
+           42.0 meter, 5.0 meter, 5.0 meter, 38.0 meter, 0.0, 15)
+
+  // Parked lander and a few partially buried boulders.
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 112.0 meter, 62.0 meter, 22.0 meter,
+           18.0 meter, 13.0 meter, 9.0 meter, 0.35, 17)
+  draw_box(viewport_x, viewport_y, viewport_width, viewport_height,
+           camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+           up_x, up_y, up_z, 112.0 meter, 62.0 meter, 13.0 meter,
+           34.0 meter, 4.0 meter, 2.0 meter, 0.35, 19)
+  draw_sphere(viewport_x, viewport_y, viewport_width, viewport_height,
+              camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+              up_x, up_y, up_z, 245.0 meter, 0.0 meter - 110.0 meter,
+              5.0 meter, 18.0 meter, 3)
+  draw_sphere(viewport_x, viewport_y, viewport_width, viewport_height,
+              camera_x, camera_y, camera_z, forward_x, forward_y, forward_z,
+              up_x, up_y, up_z, 230.0 meter, 205.0 meter,
+              8.0 meter, 24.0 meter, 3)
+
+  let sidebar_x = window_width - sidebar_width
+  fill(sidebar_x, 68.0, sidebar_width - 20.0, viewport_height, 7, 17, 31)
+  text(sidebar_x + 20.0, 88.0, "BASE STATUS", 14.0, 245, 249, 255)
+  text(sidebar_x + 20.0, 126.0,
+       "DURABILITY  ${base.durability_value()}", 11.0, 142, 203, 255)
+  text(sidebar_x + 20.0, 158.0,
+       "CHARGE      ${base.charge()}", 10.0, 205, 215, 225)
+  text(sidebar_x + 20.0, 190.0,
+       "WATER       ${base.water()}", 10.0, 205, 215, 225)
+  text(sidebar_x + 20.0, 222.0,
+       "FOOD        ${base.food_supply()}", 10.0, 205, 215, 225)
+  text(sidebar_x + 20.0, 254.0,
+       "OXYGEN      ${base.oxygen()}", 10.0, 205, 215, 225)
+  text(sidebar_x + 20.0, window_height - 58.0,
+       "FIXED LOCAL CAMERA", 10.0, 142, 164, 188)
+  present()
+}
+
+let base = Base(SolarGenerator(), LifeSupport())
+if open("Space Game - Shackleton Base", 1280, 800) {
+  let running = true
+  let simulated_second = 0.0
+  while running {
+    if poll() == false { running = false }
+    if running {
+      let now: Float64 = elapsed_seconds()
+      while simulated_second + 1.0 <= now {
+        base.runMandatorySystems(1.0 second)
+        simulated_second = simulated_second + 1
+      }
+      compose(base)
+    }
+  }
+  close()
+}

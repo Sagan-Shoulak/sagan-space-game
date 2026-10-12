@@ -15,15 +15,16 @@ answers to clarifying questions. Do not infer game requirements from old
 Codex chats or treat the current prototype's implementation details as
 settled design choices.
 
-The Sagan project manifest `sagan.toml` points to `src/main.sagan` and names
-the `sagan-physics` package as a dependency. `sagan.lock` records the currently
-selected package version. The game is a consumer: physics algorithms belong
+The Sagan project manifest `sagan.toml` points to the windowed
+`src/game.sagan` entry and names the physics and rendering packages as
+dependencies. `sagan.lock` records the currently selected package versions.
+The game is a consumer: physics algorithms belong
 in `sagan-physics`, graphical backends in `sagan-render`, and language/compiler
 behavior in `sagan`. The game may use those APIs but must not copy their
 implementations into its own source. The future `sagan-workspace` exact lock
 will coordinate compatible checkouts for holistic development.
 
-The present Sagan source opens a first local Shackleton Base presentation using
+The windowed game entry opens a first local Shackleton Base presentation using
 the exact pinned `sagan-render` package and its native GPU host. It starts in a
 fixed oblique camera over the renderer demo's local tangent-patch primitives,
 with no orbital view, orbit input, or zoom input. A sidebar presents the small
