@@ -2,9 +2,10 @@
 
 This is the public history-preserving `sagan-space-game` repository.
 `SPACE_GAME_DESIGN.md` is the sole source of game goals; the Sagan program in
-`src/main.sagan` remains a directly runnable console seed. The package entry
-`src/game.sagan` is the first windowed local-base presentation, not a complete
-game or a substitute for decisions in the design document.
+`src/main.sagan` is the first application-model library for base resources and
+simulation state. The package entry `src/game.sagan` imports that model for the
+first windowed local-base presentation. Neither is a complete game or a
+substitute for decisions in the design document.
 
 The old monorepo's `sandbox/` project was relocated to this candidate's root.
 The source file includes a separately preserved snapshot of the owner's

@@ -1,0 +1,12 @@
+module model_test
+
+import advance_base from main
+import print_base_status from main
+
+print_base_status()
+let step: Int64 = 0
+while step < 14 {
+  advance_base(0.1 second)
+  print_base_status()
+  step = step + 1
+}
