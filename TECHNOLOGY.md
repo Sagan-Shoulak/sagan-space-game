@@ -24,8 +24,11 @@ behavior in `sagan`. The game may use those APIs but must not copy their
 implementations into its own source. The future `sagan-workspace` exact lock
 will coordinate compatible checkouts for holistic development.
 
-The windowed game entry opens a first local Shackleton Base presentation using
-the exact pinned `sagan-render` package and its native GPU host. It starts in a
+`src/main.sagan` owns the initial session-local base model and exports a narrow
+function interface for advancing it and reading its status. The windowed game
+entry imports that interface and opens a first local Shackleton Base
+presentation using the exact pinned `sagan-render` package and its native GPU
+host. It starts in a
 fixed oblique camera over the renderer demo's local tangent-patch primitives,
 with no orbital view, orbit input, or zoom input. A sidebar presents the small
 outpost seed's live charge, water, food, oxygen, and durability values. This is

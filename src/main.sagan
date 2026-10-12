@@ -1,76 +1,69 @@
 module main
 
-face Powered { let powerUsage: Float<watt> }
+class BaseState {
+  let durability: Int
+  let stored_charge: Float<watt * second>
+  let water_supply: Float<kilogram>
+  let food_supply: Float<kilogram>
+  let oxygen_supply: Float<kilogram>
 
-face Degradable {
-  let .durability: Int
-  fun degrade(): Void { self.durability-- }
-  fun repair(amount: Int): Void { self.durability += amount }
-}
-
-class System has Degradable {
-  new() { self.durability = 100 }
-}
-
-class LifeSupport is System, has Powered {
-  let h2o_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  let food_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  let o2_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  new() { self.powerUsage = 75 watt }
-}
-
-class Generator is System {
-  let generationRate: Float<watt>
-  new() { self.generationRate = 100 watt }
-}
-
-class SolarGenerator is Generator { new() {} }
-
-class Base has Degradable {
-  let .generator: Generator
-  let .lifeSupport: LifeSupport
-  let .durability: Int
-  let .storedCharge: Float<watt * second>
-  let .h2o: Float<kilogram>
-  let .food: Float<kilogram>
-  let .o2: Float<kilogram>
-
-  new(generator: Generator, lifeSupport: LifeSupport) {
-    self.generator = generator
-    self.lifeSupport = lifeSupport
+  new() {
     self.durability = 100
-    self.storedCharge = 0 (watt * second)
-    self.h2o = 100 kilogram
-    self.food = 100 kilogram
-    self.o2 = 100 kilogram
+    self.stored_charge = 0 (watt * second)
+    self.water_supply = 100 kilogram
+    self.food_supply = 100 kilogram
+    self.oxygen_supply = 100 kilogram
   }
 
-  fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
-    let people: Float<person> = 10.0 person
-    self.storedCharge += self.generator.generationRate * deltaTime
-    self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
-    self.h2o -= self.lifeSupport.h2o_usage * people * deltaTime
-    self.food -= self.lifeSupport.food_usage * people * deltaTime
-    self.o2 -= self.lifeSupport.o2_usage * people * deltaTime
+  fun advance!(delta_time: Float<second>): Void {
+    let population: Float<person> = 10 person
+    let generation_rate: Float<watt> = 100 watt
+    let power_use: Float<watt> = 75 watt
+    let water_use: Float<kilogram / second / person> =
+      1 (kilogram / second / person)
+    let food_use: Float<kilogram / second / person> =
+      1 (kilogram / second / person)
+    let oxygen_use: Float<kilogram / second / person> =
+      1 (kilogram / second / person)
+
+    self.stored_charge += (generation_rate - power_use) * delta_time
+    self.water_supply -= water_use * population * delta_time
+    self.food_supply -= food_use * population * delta_time
+    self.oxygen_supply -= oxygen_use * population * delta_time
   }
 
-  fun summarize(): Void {
+  fun print_status(): Void {
     print("STATUS")
-    print("  Charge: ${self.storedCharge}")
-    print("  h2o: ${self.h2o}")
-    print("  Food: ${self.food}")
-    print("  O2: ${self.o2}")
+    print("  Charge: ${self.stored_charge}")
+    print("  h2o: ${self.water_supply}")
+    print("  Food: ${self.food_supply}")
+    print("  O2: ${self.oxygen_supply}")
   }
+
+  fun durability_value(): Int => self.durability
+  fun charge(): Float<watt * second> => self.stored_charge
+  fun water(): Float<kilogram> => self.water_supply
+  fun food(): Float<kilogram> => self.food_supply
+  fun oxygen(): Float<kilogram> => self.oxygen_supply
 }
 
-let base = Base(SolarGenerator(), LifeSupport())
-base.summarize()
-let step: Int64 = 0
-while step < 14 {
-  base.runMandatorySystems()
-  base.summarize()
-  step = step + 1
+let shackleton_base = BaseState()
+
+fun advance_base(delta_time: Float<second>): Void {
+  shackleton_base.advance!(delta_time)
 }
+
+fun print_base_status(): Void { shackleton_base.print_status() }
+fun base_durability(): Int => shackleton_base.durability_value()
+fun base_charge(): Float<watt * second> => shackleton_base.charge()
+fun base_water(): Float<kilogram> => shackleton_base.water()
+fun base_food(): Float<kilogram> => shackleton_base.food()
+fun base_oxygen(): Float<kilogram> => shackleton_base.oxygen()
+
+export advance_base
+export print_base_status
+export base_durability
+export base_charge
+export base_water
+export base_food
+export base_oxygen

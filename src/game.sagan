@@ -12,72 +12,12 @@ import mesh_sphere from render.ui
 import mesh_box from render.ui
 import present from render.ui
 import elapsed_seconds from render.ui
-
-face Powered {
-  let powerUsage: Float<watt>
-}
-
-face Degradable {
-  let .durability: Int
-  fun degrade(): Void { self.durability-- }
-  fun repair(amount: Int): Void { self.durability += amount }
-}
-
-class System has Degradable {
-  new() { self.durability = 100 }
-}
-
-class LifeSupport is System, has Powered {
-  let h2o_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  let food_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  let o2_usage: Float<kilogram / second / person> =
-    1 (kilogram / second / person)
-  new() { self.powerUsage = 75 watt }
-}
-
-class Generator is System {
-  let generationRate: Float<watt>
-  new() { self.generationRate = 100 watt }
-}
-
-class SolarGenerator is Generator { new() {} }
-
-class Base has Degradable {
-  let .generator: Generator
-  let .lifeSupport: LifeSupport
-  let .durability: Int
-  let .storedCharge: Float<watt * second>
-  let .h2o: Float<kilogram>
-  let .food: Float<kilogram>
-  let .o2: Float<kilogram>
-
-  new(generator: Generator, lifeSupport: LifeSupport) {
-    self.generator = generator
-    self.lifeSupport = lifeSupport
-    self.durability = 100
-    self.storedCharge = 0 (watt * second)
-    self.h2o = 100 kilogram
-    self.food = 100 kilogram
-    self.o2 = 100 kilogram
-  }
-
-  fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
-    let people: Float<person> = 10.0 person // FIXME: Real people
-    self.storedCharge += self.generator.generationRate * deltaTime
-    self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
-    self.h2o -= self.lifeSupport.h2o_usage * people * deltaTime
-    self.food -= self.lifeSupport.food_usage * people * deltaTime
-    self.o2 -= self.lifeSupport.o2_usage * people * deltaTime
-  }
-
-  fun durability_value(): Int => self.durability
-  fun charge(): Float<watt * second> => self.storedCharge
-  fun water(): Float<kilogram> => self.h2o
-  fun food_supply(): Float<kilogram> => self.food
-  fun oxygen(): Float<kilogram> => self.o2
-}
+import advance_base from main
+import base_durability from main
+import base_charge from main
+import base_water from main
+import base_food from main
+import base_oxygen from main
 
 // Keep this local scene far from the world origin so the first game view uses
 // the renderer's camera-relative precision path from the beginning.
@@ -118,7 +58,7 @@ fun draw_sphere(viewport_x: Float64, viewport_y: Float64,
               SHACKLETON_ORIGIN + z, radius, appearance, false)
 }
 
-fun compose(base: Base): Void {
+fun compose(): Void {
   let window_width = width()
   let window_height = height()
   let sidebar_width = 310.0
@@ -217,21 +157,20 @@ fun compose(base: Base): Void {
   fill(sidebar_x, 68.0, sidebar_width - 20.0, viewport_height, 7, 17, 31)
   text(sidebar_x + 20.0, 88.0, "BASE STATUS", 14.0, 245, 249, 255)
   text(sidebar_x + 20.0, 126.0,
-       "DURABILITY  ${base.durability_value()}", 11.0, 142, 203, 255)
+       "DURABILITY  ${base_durability()}", 11.0, 142, 203, 255)
   text(sidebar_x + 20.0, 158.0,
-       "CHARGE      ${base.charge()}", 10.0, 205, 215, 225)
+       "CHARGE      ${base_charge()}", 10.0, 205, 215, 225)
   text(sidebar_x + 20.0, 190.0,
-       "WATER       ${base.water()}", 10.0, 205, 215, 225)
+       "WATER       ${base_water()}", 10.0, 205, 215, 225)
   text(sidebar_x + 20.0, 222.0,
-       "FOOD        ${base.food_supply()}", 10.0, 205, 215, 225)
+       "FOOD        ${base_food()}", 10.0, 205, 215, 225)
   text(sidebar_x + 20.0, 254.0,
-       "OXYGEN      ${base.oxygen()}", 10.0, 205, 215, 225)
+       "OXYGEN      ${base_oxygen()}", 10.0, 205, 215, 225)
   text(sidebar_x + 20.0, window_height - 58.0,
        "FIXED LOCAL CAMERA", 10.0, 142, 164, 188)
   present()
 }
 
-let base = Base(SolarGenerator(), LifeSupport())
 if open("Space Game - Shackleton Base", 1280, 800) {
   let running = true
   let simulated_second = 0.0
@@ -240,10 +179,10 @@ if open("Space Game - Shackleton Base", 1280, 800) {
     if running {
       let now: Float64 = elapsed_seconds()
       while simulated_second + 1.0 <= now {
-        base.runMandatorySystems(1.0 second)
+        advance_base(1.0 second)
         simulated_second = simulated_second + 1
       }
-      compose(base)
+      compose()
     }
   }
   close()
