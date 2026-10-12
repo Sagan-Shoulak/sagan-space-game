@@ -1,0 +1,18 @@
+module faces
+
+face Powered {
+  let powerUsage: Float<watt>
+}
+
+face Degradable {
+  let .durability: Int
+  
+  fun degrade(): Void { self.durability-- }
+  fun repair(amount: Int): Void { self.durability += amount }
+}
+
+face Consumer {} // of non-electric resources
+
+export Powered
+export Degradable
+export Consumer

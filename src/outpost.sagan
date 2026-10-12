@@ -1,0 +1,66 @@
+module outpost
+
+import Degradable from faces
+import System from systems
+import LifeSupport from systems
+import Generator from systems
+import SolarGenerator from systems
+
+class Outpost has Degradable {
+  let .generator: Generator
+  let .lifeSupport: LifeSupport
+  
+  let .durability: Int
+  let .storedCharge: Float<watt * second>
+  let .h2o: Float<kilogram>
+  let .food: Float<kilogram>
+  let .o2: Float<kilogram>
+  
+  new(generator: Generator, lifeSupport: LifeSupport) {
+    self.generator = generator
+    self.lifeSupport = lifeSupport
+    
+    self.durability = 100
+    self.storedCharge = 0 (watt * second)
+    self.h2o = 100 kilogram
+    self.food = 100 kilogram
+    self.o2 = 100 kilogram
+  }
+  
+  fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
+    let people: Float = 10.0 // FIXME: Real people
+    
+    self.storedCharge += self.generator.generationRate * deltaTime
+    
+    self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
+    self.h2o -= self.lifeSupport.h2o_usage * deltaTime
+    self.food -= self.lifeSupport.food_usage * deltaTime
+    self.o2 -= self.lifeSupport.o2_usage * deltaTime
+  }
+  
+  fun summarize(): Void {
+    print("STATUS")
+    print("  Charge: ${self.storedCharge}")
+    print("  h2o: ${self.h2o}")
+    print("  Food: ${self.food}")
+    print("  O2: ${self.o2}")
+  }
+
+  fun durability_value(): Int => self.durability
+  fun charge(): Float<watt * second> => self.storedCharge
+  fun water(): Float<kilogram> => self.h2o
+  fun food_supply(): Float<kilogram> => self.food
+  fun oxygen(): Float<kilogram> => self.o2
+}
+
+class Station is Outpost {
+  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
+}
+
+class Base is Outpost {
+  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
+}
+
+export Outpost
+export Station
+export Base
