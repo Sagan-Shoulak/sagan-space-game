@@ -25,7 +25,8 @@ are a temporary CI path while released package
 consumption is paused; they do not certify a game release. Keep the lockfile
 and package versions compatible when changing any pin.
 
-From the repository root in Git Bash, build and run the windowed game with:
+From the repository root in Bash (Git Bash on Windows), build and run the
+windowed game with:
 
 ```bash
 bash scripts/run.sh
@@ -46,6 +47,34 @@ than overwritten. The first run requires network access, Git, Make, curl,
 unzip, and the compiler prerequisites for Sagan and the renderer. On Windows,
 run from an MSYS2 UCRT64 Git Bash environment so the native compiler is
 available.
+
+On macOS, install Apple's Command Line Tools with `xcode-select --install`
+if `c++`, Git, or Make is missing. The renderer builds its checksum-pinned
+SDL3 source and supplies the CMake bootstrap when CMake is absent; Ninja
+is optional. Homebrew is not required. The native host uses Metal and the
+renderer-owned MSL shader artifacts. The executable embeds the pinned SDL
+installation's library search path. Retain that ignored renderer cache while
+using the executable. This is a local development build, not a signed or
+distributed macOS application.
+
+To build without leaving a window open, use `bash scripts/run.sh --build-only`.
+On macOS the launcher stages `build/game/application/Sagan Space Game.app`
+with the compiler's canonical Sagan logo in its icon resources. It runs the
+executable inside that bundle, retaining the renderer working directory and
+environment. The bundle depends on the pinned renderer cache and launcher
+shader configuration; use the launcher for development runs.
+The executable is `build/game/space-game` on Linux, or
+`build/game/space-game.exe` on Windows. The macOS CI job checks the bundle's
+property list and canonical icon, runs the numeric seed,
+builds the native host, and records the two fixed-camera captures with
+`tests/integration/shackleton_view_test.sh`. That fixture requests and verifies
+960×540 captures so hosted desktop bounds do not resize the comparison views.
+Run graphical checks in a logged-in
+desktop session; successful package emission alone does not verify Metal.
+If a newly installed full Xcode reports an unaccepted license, complete its
+setup yourself. To use the separately installed Command Line Tools for this
+development build, run
+`DEVELOPER_DIR=/Library/Developer/CommandLineTools bash scripts/run.sh`.
 
 Set `SAGAN_EXECUTABLE`, `SAGAN_PACKAGE_INDEX`,
 `SAGAN_PHYSICS_SOURCE_ROOT`, or `SAGAN_RENDER_SOURCE_ROOT` only for an explicit
