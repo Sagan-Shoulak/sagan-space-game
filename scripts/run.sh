@@ -81,7 +81,9 @@ case "$host_os" in
       "$render_root/examples/ui_gpu_demo.cpp" \
       -L"$sdl_root/lib" -Wl,-rpath,"$sdl_root/lib" -lSDL3 \
       -o build/game/space-game
-    game_executable="$repo_root/build/game/space-game"
+    game_executable="$(bash "$render_root/scripts/stage-application-icon.sh" \
+      "$sagan_executable" "$repo_root/build/game/space-game" \
+      "Sagan Space Game" "org.saganshoulak.space-game")"
     ;;
   *)
     echo "error: scripts/run.sh supports Windows, Linux, and macOS" >&2

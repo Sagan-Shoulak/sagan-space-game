@@ -95,7 +95,10 @@ jobs:
           export SAGAN_RENDER_CMAKE_BOOTSTRAP=1
           export SAGAN_RENDER_CMAKE_GENERATOR='Unix Makefiles'
           bash scripts/run.sh --build-only
-          bash tests/integration/shackleton_view_test.sh build/game/space-game "$SAGAN_RENDER_SOURCE_ROOT"
+          bundle='build/game/application/Sagan Space Game.app'
+          plutil -lint "$bundle/Contents/Info.plist"
+          cmp "$bundle/Contents/Resources/sagan.icns" "$("$SAGAN_EXECUTABLE" --application-icon macos)"
+          bash tests/integration/shackleton_view_test.sh "$bundle/Contents/MacOS/Sagan Space Game" "$SAGAN_RENDER_SOURCE_ROOT"
       - name: Retain macOS gameplay captures
         if: runner.os == 'macOS' && always()
         uses: actions/upload-artifact@v4
