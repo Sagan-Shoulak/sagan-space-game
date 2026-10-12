@@ -61,7 +61,9 @@ To build without leaving a window open, use `bash scripts/run.sh --build-only`.
 The executable is `build/game/space-game` on macOS and Linux, or
 `build/game/space-game.exe` on Windows. The macOS CI job runs the numeric seed,
 builds the native host, and records the two fixed-camera captures with
-`tests/integration/shackleton_view_test.sh`. Run graphical checks in a logged-in
+`tests/integration/shackleton_view_test.sh`. That fixture requests and verifies
+960×540 captures so hosted desktop bounds do not resize the comparison views.
+Run graphical checks in a logged-in
 desktop session; successful package emission alone does not verify Metal.
 If a newly installed full Xcode reports an unaccepted license, complete its
 setup yourself. To use the separately installed Command Line Tools for this
