@@ -10,7 +10,7 @@ verified_by: null
 # Maintaining Space Game
 
 This is a public split repository. `SPACE_GAME_DESIGN.md` owns the game goals;
-`src/main.sagan` is a prototype seed. The installed-toolchain test and
+`tests/fixtures/outpost_seed/` preserves the numeric prototype seed. The installed-toolchain test and
 release pipeline remain unverified. Do not present this source as a game
 release.
 
@@ -19,7 +19,7 @@ release.
 Independent seed CI checks out exact language, physics, and renderer commits
 from the three `sagan-*-commit.txt` files, builds the compiler, emits the
 windowed `src/game.sagan` application package, then runs the numeric seed in
-`src/main.sagan` directly on Linux and Windows using
+`tests/fixtures/outpost_seed/` as a console package on Linux, Windows, and macOS using
 `bash tests/integration/game_seed_test.sh`. These source pins
 are a temporary CI path while released package
 consumption is paused; they do not certify a game release. Keep the lockfile
