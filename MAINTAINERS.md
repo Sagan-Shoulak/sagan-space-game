@@ -16,16 +16,16 @@ release.
 
 ## Reproduce the current focused check
 
-Independent seed CI checks out exact language and physics commits from
-`sagan-source-commit.txt` and `sagan-physics-commit.txt`, builds the compiler,
-then runs `src/main.sagan` against the pinned physics package on Linux and
-Windows using `bash tests/integration/game_seed_test.sh`. These source pins
+Independent seed CI checks out exact language, physics, and renderer commits
+from the three `sagan-*-commit.txt` files, builds the compiler, emits the
+windowed application package, then runs the standalone numeric fixture in
+`src/seed_test.sagan` on Linux and Windows using
+`bash tests/integration/game_seed_test.sh`. These source pins
 are a temporary CI path while released package
 consumption is paused; they do not certify a game release. Keep the lockfile
-and package versions compatible when changing either pin.
+and package versions compatible when changing any pin.
 
-From the repository root in Git Bash, run the pinned local compiler and physics
-package with:
+From the repository root in Git Bash, build and run the windowed game with:
 
 ```bash
 bash scripts/run.sh
@@ -36,22 +36,30 @@ On the first run, `scripts/resolve-sagan.sh` clones the exact commit in
 `build/sagan-pinned-<commit>/`, and reuses that compiler on later runs.
 `scripts/resolve-physics.sh` likewise clones the exact commit in
 `sagan-physics-commit.txt` under ignored
-`build/sagan-physics-pinned-<commit>/` and supplies its package catalog. An
+`build/sagan-physics-pinned-<commit>/`. `scripts/resolve-render.sh` clones the
+exact `sagan-render-commit.txt` commit under
+`build/sagan-render-pinned-<commit>/`; `scripts/resolve-packages.sh` composes
+both packages into an ignored relative-path catalog. The launcher emits and
+links one native windowed executable using the renderer's SDL resolver. An
 incomplete cache is preserved with an `.incomplete-<timestamp>` suffix rather
-than overwritten. The first run requires network access, Git, Make, and the
-compiler prerequisites for Sagan. On Windows, run from an MSYS2 UCRT64 Git
-Bash environment so the native compiler is available.
+than overwritten. The first run requires network access, Git, Make, curl,
+unzip, and the compiler prerequisites for Sagan and the renderer. On Windows,
+run from an MSYS2 UCRT64 Git Bash environment so the native compiler is
+available.
 
-Set `SAGAN_EXECUTABLE` or `SAGAN_PACKAGE_INDEX` only for an explicit reviewed
-override. `SAGAN_BUILD_JOBS` controls the compiler build parallelism and
-defaults to `2`. A successful run prints the base's initial status, advances
-its mandatory systems in 0.1-second steps, reaches 35 watt-seconds of stored
-charge with 98.6 kilograms each of water, food, and oxygen, then exits zero.
+Set `SAGAN_EXECUTABLE`, `SAGAN_PACKAGE_INDEX`,
+`SAGAN_PHYSICS_SOURCE_ROOT`, or `SAGAN_RENDER_SOURCE_ROOT` only for an explicit
+reviewed override. Every source-root override must match its exact pin.
+`SAGAN_BUILD_JOBS` controls compiler build parallelism and defaults to `2`.
+A successful normal run opens directly into the fixed local Shackleton Base
+view and continues until the window closes. The standalone numeric fixture
+still advances fourteen 0.1-second steps, reaches 35 watt-seconds of stored
+charge with 86 kilograms each of water, food, and oxygen, then exits zero.
 The manifest currently names the package `Sandbox`, retained from the seed;
 rename it only after the owner chooses the game's package identity.
 
-`sagan.toml` declares the physics dependency, and `sagan.lock` selects its
-current version. Do not silently replace a released package with a sibling
+`sagan.toml` declares the physics and rendering dependencies, and `sagan.lock`
+selects their current versions. Do not silently replace a released package with a sibling
 checkout. Use the workspace's exact lock and record any local override when
 testing across repositories. Build outputs belong in ignored `build/`.
 

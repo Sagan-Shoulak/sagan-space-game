@@ -23,6 +23,19 @@ pin="$(tr -d '\r\n' < "$pin_file")"
   fail "physics pin must be one lowercase 40-character Git commit"
 
 short_pin="${pin:0:8}"
+
+if [[ -n "${SAGAN_PHYSICS_SOURCE_ROOT:-}" ]]; then
+  source_root="$(cd "$SAGAN_PHYSICS_SOURCE_ROOT" && pwd)"
+  package_index="$source_root/libraries/index.tsv"
+  [[ -f "$package_index" ]] || \
+    fail "override does not contain the physics package: $source_root"
+  override_pin="$(git -C "$source_root" rev-parse HEAD 2>/dev/null || true)"
+  [[ "$override_pin" == "$pin" ]] || \
+    fail "override is $override_pin, expected exact pin $pin"
+  printf '%s\n' "$package_index"
+  exit 0
+fi
+
 cache_base="${SAGAN_PHYSICS_CACHE_ROOT:-$repo_root/build}"
 source_root="$cache_base/sagan-physics-pinned-$short_pin"
 package_index="$source_root/libraries/index.tsv"

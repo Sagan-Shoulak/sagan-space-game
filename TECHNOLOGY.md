@@ -23,16 +23,21 @@ behavior in `sagan`. The game may use those APIs but must not copy their
 implementations into its own source. The future `sagan-workspace` exact lock
 will coordinate compatible checkouts for holistic development.
 
-The present Sagan source defines natural-body and spacecraft concepts and
-prints sample body summaries and distances. It has no persistent game state,
-resource economy, simulation loop, input system, or rendering window yet.
+The present Sagan source opens a first local Shackleton Base presentation using
+the exact pinned `sagan-render` package and its native GPU host. It starts in a
+fixed oblique camera over the renderer demo's local tangent-patch primitives,
+with no orbital view, orbit input, or zoom input. A sidebar presents the small
+outpost seed's live charge, water, food, oxygen, and durability values. This is
+still a session-only vertical slice: it has no persistence, menus, construction
+controls, or authoritative lunar terrain model.
 The `Sandbox` package name is inherited from the prototype and is not a
 decision about the final product name. The sample's orbital quantities and
 outputs should be evaluated as prototype behavior, not as validated
 astronomical data or promised gameplay.
 
-The current Windows rehearsal ran the imported source with the existing
-Sagan executable and MinGW toolchain and exited successfully. An installed
-standalone Sagan distribution plus independently published physics package
-has not yet been validated. See [MAINTAINERS.md](MAINTAINERS.md) for the
-exact test and recovery path.
+The local launcher resolves exact Sagan, physics, and renderer commits into
+ignored caches, creates one package catalog, emits the application C++, links
+the renderer's native host against pinned SDL, and runs from the renderer root
+so its reviewed shaders and planetary assets remain available. These exact
+source pins are development integration inputs, not released-package evidence.
+See [MAINTAINERS.md](MAINTAINERS.md) for the exact test and recovery path.

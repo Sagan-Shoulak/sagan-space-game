@@ -10,7 +10,7 @@ if [[ -z "${SAGAN_PACKAGE_INDEX:-}" ]]; then
   exit 2
 fi
 
-output="$("${SAGAN_EXECUTABLE:-sagan}" src/main.sagan)"
+output="$("${SAGAN_EXECUTABLE:-sagan}" src/seed_test.sagan)"
 for expected in \
   "STATUS" \
   "Charge: 0 watt * second" \
