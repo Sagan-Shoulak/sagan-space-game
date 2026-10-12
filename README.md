@@ -1,8 +1,17 @@
+---
+title: Space Game
+status: review-needed
+publication_ready: false
+verified_in: null
+verified_on: null
+verified_by: null
+---
+
 # Space Game
 
 This is the public history-preserving `sagan-space-game` repository.
 `SPACE_GAME_DESIGN.md` is the sole source of game goals; the Sagan program in
-`src/main.sagan` remains a directly runnable console seed. The package entry
+`tests/fixtures/outpost_seed/` preserves the runnable console seed. The package entry
 `src/game.sagan` is the first windowed local-base presentation, not a complete
 game or a substitute for decisions in the design document.
 
