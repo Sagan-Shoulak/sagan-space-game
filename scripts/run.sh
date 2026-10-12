@@ -5,6 +5,19 @@ export PATH="/c/msys64/ucrt64/bin:/ucrt64/bin:/usr/bin:/bin:$PATH"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+
+build_only=false
+case "${1:-}" in
+  "") ;;
+  --build-only) build_only=true ;;
+  *) echo "Usage: bash scripts/run.sh [--build-only]" >&2; exit 2 ;;
+esac
+if [[ $# -gt 1 ]]; then
+  echo "Usage: bash scripts/run.sh [--build-only]" >&2
+  exit 2
+fi
+
+host_os="$(uname -s)"
 mkdir -p build/game build/tmp
 
 sagan_executable="$(bash scripts/resolve-sagan.sh)"
@@ -15,7 +28,6 @@ fi
 
 "$sagan_executable" --emit-cpp-package . build/game/program.cpp
 
-host_os="$(uname -s)"
 case "$host_os" in
   MINGW*|MSYS*|CYGWIN*)
     sdl_root="$(bash "$render_root/scripts/fetch-sdl3-windows.sh")"
@@ -56,11 +68,33 @@ case "$host_os" in
       -o build/game/space-game
     game_executable="$repo_root/build/game/space-game"
     ;;
+  Darwin)
+    sdl_root="$(bash "$render_root/scripts/build-sdl3-source.sh" | tail -n 1)"
+    [[ -f "$sdl_root/include/SDL3/SDL.h" ]] || {
+      echo "error: pinned SDL3 build did not provide SDL3/SDL.h" >&2
+      exit 1
+    }
+    c++ -std=c++23 -Wall -Wextra -Wpedantic -Werror \
+      -DSAGAN_RENDER_UI_BRIDGE \
+      -include "$render_root/libraries/render/native/ui_gpu_bridge.hpp" \
+      -I"$sdl_root/include" build/game/program.cpp \
+      "$render_root/examples/ui_gpu_demo.cpp" \
+      -L"$sdl_root/lib" -Wl,-rpath,"$sdl_root/lib" -lSDL3 \
+      -o build/game/space-game
+    game_executable="$(bash "$render_root/scripts/stage-application-icon.sh" \
+      "$sagan_executable" "$repo_root/build/game/space-game" \
+      "Sagan Space Game" "org.saganshoulak.space-game")"
+    ;;
   *)
-    echo "error: scripts/run.sh currently supports Windows and Linux" >&2
+    echo "error: scripts/run.sh supports Windows, Linux, and macOS" >&2
     exit 1
     ;;
 esac
+
+if [[ "$build_only" == true ]]; then
+  printf '%s\n' "$game_executable"
+  exit 0
+fi
 
 export SAGAN_RENDER_DEMO_KIND=surface
 export SAGAN_RENDER_SHADER_ROOT="$render_root/shaders/generated/material"

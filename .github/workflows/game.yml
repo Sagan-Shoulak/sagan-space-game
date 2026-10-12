@@ -22,6 +22,7 @@ jobs:
         include:
           - { runner: ubuntu-latest, os: linux }
           - { runner: windows-latest, os: windows }
+          - { runner: macos-latest, os: macos }
     steps:
       - uses: actions/checkout@v7
         with:
@@ -75,6 +76,36 @@ jobs:
         shell: msys2 {0}
         working-directory: sagan-source
         run: make -j2 bin/sagan
+      - name: Build pinned compiler (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        working-directory: sagan-source
+        run: make -j2 bin/sagan
+      - name: Build and verify game (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        working-directory: game
+        run: |
+          export SAGAN_EXECUTABLE="$GITHUB_WORKSPACE/sagan-source/bin/sagan"
+          export SAGAN_PHYSICS_SOURCE_ROOT="$GITHUB_WORKSPACE/physics"
+          export SAGAN_RENDER_SOURCE_ROOT="$GITHUB_WORKSPACE/render"
+          export SAGAN_PACKAGE_INDEX="$(bash scripts/resolve-packages.sh)"
+          bash -n scripts/*.sh tests/integration/*.sh
+          bash tests/integration/game_seed_test.sh
+          export SAGAN_RENDER_CMAKE_BOOTSTRAP=1
+          export SAGAN_RENDER_CMAKE_GENERATOR='Unix Makefiles'
+          bash scripts/run.sh --build-only
+          bundle='build/game/application/Sagan Space Game.app'
+          plutil -lint "$bundle/Contents/Info.plist"
+          cmp "$bundle/Contents/Resources/sagan.icns" "$("$SAGAN_EXECUTABLE" --application-icon macos)"
+          bash tests/integration/shackleton_view_test.sh "$bundle/Contents/MacOS/Sagan Space Game" "$SAGAN_RENDER_SOURCE_ROOT"
+      - name: Retain macOS gameplay captures
+        if: runner.os == 'macOS' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-shackleton-view
+          path: game/build/shackleton-view-test/*.bmp
+          if-no-files-found: warn
       - name: Run game seed (Linux)
         if: runner.os == 'Linux'
         shell: bash
