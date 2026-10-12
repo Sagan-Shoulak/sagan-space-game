@@ -15,24 +15,30 @@ answers to clarifying questions. Do not infer game requirements from old
 Codex chats or treat the current prototype's implementation details as
 settled design choices.
 
-The Sagan project manifest `sagan.toml` points to `src/main.sagan` and names
-the `sagan-physics` package as a dependency. `sagan.lock` records the currently
-selected package version. The game is a consumer: physics algorithms belong
+The Sagan project manifest `sagan.toml` points to the windowed
+`src/game.sagan` entry and names the physics and rendering packages as
+dependencies. `sagan.lock` records the currently selected package versions.
+The game is a consumer: physics algorithms belong
 in `sagan-physics`, graphical backends in `sagan-render`, and language/compiler
 behavior in `sagan`. The game may use those APIs but must not copy their
 implementations into its own source. The future `sagan-workspace` exact lock
 will coordinate compatible checkouts for holistic development.
 
-The present Sagan source defines natural-body and spacecraft concepts and
-prints sample body summaries and distances. It has no persistent game state,
-resource economy, simulation loop, input system, or rendering window yet.
+The windowed game entry opens a first local Shackleton Base presentation using
+the exact pinned `sagan-render` package and its native GPU host. It starts in a
+fixed oblique camera over the renderer demo's local tangent-patch primitives,
+with no orbital view, orbit input, or zoom input. A sidebar presents the small
+outpost seed's live charge, water, food, oxygen, and durability values. This is
+still a session-only vertical slice: it has no persistence, menus, construction
+controls, or authoritative lunar terrain model.
 The `Sandbox` package name is inherited from the prototype and is not a
 decision about the final product name. The sample's orbital quantities and
 outputs should be evaluated as prototype behavior, not as validated
 astronomical data or promised gameplay.
 
-The current Windows rehearsal ran the imported source with the existing
-Sagan executable and MinGW toolchain and exited successfully. An installed
-standalone Sagan distribution plus independently published physics package
-has not yet been validated. See [MAINTAINERS.md](MAINTAINERS.md) for the
-exact test and recovery path.
+The local launcher resolves exact Sagan, physics, and renderer commits into
+ignored caches, creates one package catalog, emits the application C++, links
+the renderer's native host against pinned SDL, and runs from the renderer root
+so its reviewed shaders and planetary assets remain available. These exact
+source pins are development integration inputs, not released-package evidence.
+See [MAINTAINERS.md](MAINTAINERS.md) for the exact test and recovery path.

@@ -1,51 +1,37 @@
 module main
 
-face Powered {
-  let powerUsage: Float<watt>
-}
+face Powered { let powerUsage: Float<watt> }
 
 face Degradable {
   let .durability: Int
-
   fun degrade(): Void { self.durability-- }
   fun repair(amount: Int): Void { self.durability += amount }
 }
 
-face Consumer {} // of non-electric resources
-
 class System has Degradable {
-  new() {
-    self.durability = 100
-  }
+  new() { self.durability = 100 }
 }
 
 class LifeSupport is System, has Powered {
-  let h2o_usage: Float<kilogram / second / person>  = 1 (kilogram / second / person)
-  let food_usage: Float<kilogram / second / person> = 1 (kilogram / second / person)
-  let o2_usage: Float<kilogram / second / person>   = 1 (kilogram / second / person)
-
-  new() {
-    self.powerUsage = 75 watt
-  }
+  let h2o_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  let food_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  let o2_usage: Float<kilogram / second / person> =
+    1 (kilogram / second / person)
+  new() { self.powerUsage = 75 watt }
 }
 
 class Generator is System {
   let generationRate: Float<watt>
-
-  new() {
-    self.generationRate = 100 watt
-  }
+  new() { self.generationRate = 100 watt }
 }
 
-class SolarGenerator is Generator {
-  new() {
-  }
-}
+class SolarGenerator is Generator { new() {} }
 
-class Outpost has Degradable {
+class Base has Degradable {
   let .generator: Generator
   let .lifeSupport: LifeSupport
-
   let .durability: Int
   let .storedCharge: Float<watt * second>
   let .h2o: Float<kilogram>
@@ -55,7 +41,6 @@ class Outpost has Degradable {
   new(generator: Generator, lifeSupport: LifeSupport) {
     self.generator = generator
     self.lifeSupport = lifeSupport
-
     self.durability = 100
     self.storedCharge = 0 (watt * second)
     self.h2o = 100 kilogram
@@ -64,10 +49,8 @@ class Outpost has Degradable {
   }
 
   fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
-    let people: Float<person> = 10.0 person // FIXME: Real people
-
+    let people: Float<person> = 10.0 person
     self.storedCharge += self.generator.generationRate * deltaTime
-
     self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
     self.h2o -= self.lifeSupport.h2o_usage * people * deltaTime
     self.food -= self.lifeSupport.food_usage * people * deltaTime
@@ -83,49 +66,11 @@ class Outpost has Degradable {
   }
 }
 
-class Station is Outpost {
-  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
+let base = Base(SolarGenerator(), LifeSupport())
+base.summarize()
+let step: Int64 = 0
+while step < 14 {
+  base.runMandatorySystems()
+  base.summarize()
+  step = step + 1
 }
-
-class Base is Outpost {
-  new(generator: Generator, lifeSupport: LifeSupport) is Outpost(generator, lifeSupport) {}
-}
-
-
-/////////////////
-
-
-let lifeSupport_basic = LifeSupport()
-let solarPanels_basic = SolarGenerator()
-
-let base_basic = Base(solarPanels_basic, lifeSupport_basic)
-
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
-base_basic.runMandatorySystems()
-base_basic.summarize()
