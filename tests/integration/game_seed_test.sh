@@ -16,9 +16,9 @@ for expected in \
   "Charge: 0 watt * second" \
   "h2o: 100 kilogram" \
   "Charge: 35 watt * second" \
-  "h2o: 98.6 kilogram" \
-  "Food: 98.6 kilogram" \
-  "O2: 98.6 kilogram"; do
+  "h2o: 86 kilogram" \
+  "Food: 86 kilogram" \
+  "O2: 86 kilogram"; do
   if [[ "$output" != *"$expected"* ]]; then
     echo "Missing Space Game seed output: $expected" >&2
     echo "$output" >&2

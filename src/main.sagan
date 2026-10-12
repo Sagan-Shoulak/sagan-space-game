@@ -20,9 +20,9 @@ class System has Degradable {
 }
 
 class LifeSupport is System, has Powered {
-  let h2o_usage: Float<kilogram / second>  = 1 (kilogram / second) // / 1 person
-  let food_usage: Float<kilogram / second> = 1 (kilogram / second) // / 1 person
-  let o2_usage: Float<kilogram / second>   = 1 (kilogram / second) // / 1 person
+  let h2o_usage: Float<kilogram / second / person>  = 1 (kilogram / second / person)
+  let food_usage: Float<kilogram / second / person> = 1 (kilogram / second / person)
+  let o2_usage: Float<kilogram / second / person>   = 1 (kilogram / second / person)
 
   new() {
     self.powerUsage = 75 watt
@@ -64,14 +64,14 @@ class Outpost has Degradable {
   }
 
   fun runMandatorySystems(deltaTime: Float<second> = 0.1 second): Void {
-    let people: Float = 10.0 // FIXME: Real people
+    let people: Float<person> = 10.0 person // FIXME: Real people
 
     self.storedCharge += self.generator.generationRate * deltaTime
 
     self.storedCharge -= self.lifeSupport.powerUsage * deltaTime
-    self.h2o -= self.lifeSupport.h2o_usage * deltaTime
-    self.food -= self.lifeSupport.food_usage * deltaTime
-    self.o2 -= self.lifeSupport.o2_usage * deltaTime
+    self.h2o -= self.lifeSupport.h2o_usage * people * deltaTime
+    self.food -= self.lifeSupport.food_usage * people * deltaTime
+    self.o2 -= self.lifeSupport.o2_usage * people * deltaTime
   }
 
   fun summarize(): Void {
