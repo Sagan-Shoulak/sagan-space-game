@@ -23,6 +23,10 @@ import RecipeCatalog from recipes
 import separate_regolith from recipes
 
 import ProcessingMachine from machines
+import Steelworks from machines
+import PolymerPlant from machines
+import ElectronicsFabricator from machines
+import MaintenancePartsFabricator from machines
 
 let catalog = ResourceCatalog()
 let h2o = catalog.definition(H2O)
@@ -179,5 +183,29 @@ blocked_machine.update!(0.0 second, blocked_inventory, blocked_energy)
 assert(blocked_machine.is_idle(), "The base tick retries blocked output deposition")
 assert(blocked_inventory.amount(steel) == 100.0 kilogram,
        "Buffered output is deposited without loss")
+
+let production_steelworks = Steelworks()
+assert(production_steelworks.batch_mass() == 100.0 kilogram,
+       "Steelworks uses a readable 100 kg batch")
+assert(production_steelworks.energy_per_mass() ==
+       1600000.0 (watt * second / kilogram),
+       "Steelworks approximates electric-arc energy intensity")
+
+let production_polymer = PolymerPlant()
+assert(production_polymer.energy_per_mass() ==
+       13000000.0 (watt * second / kilogram),
+       "Polymer plant records its modeled process energy")
+
+let production_electronics = ElectronicsFabricator()
+assert(production_electronics.batch_mass() == 25.0 kilogram,
+       "Electronics fabrication uses a smaller batch")
+assert(production_electronics.recipe().id() == "electronic_components",
+       "Electronics fabricator carries its concrete recipe")
+
+let production_parts = MaintenancePartsFabricator()
+assert(production_parts.power_demand() == 50000.0 watt,
+       "Maintenance-parts fabrication has a concrete power demand")
+assert(production_parts.recipe().id() == "maintenance_parts",
+       "Maintenance-parts fabricator carries its concrete recipe")
 
 print("Resource model test passed")

@@ -7,6 +7,7 @@ import EnergyStore from resources
 import REGOLITH from resources
 
 import RecipeDefinition from recipes
+import RecipeCatalog from recipes
 
 const MACHINE_IDLE: Int64 = 0
 const MACHINE_PROCESSING: Int64 = 1
@@ -42,6 +43,8 @@ class ProcessingMachine {
   fun batch_mass(): Float64<kilogram> => self.batch_mass_value
   fun throughput(): Float64<kilogram / second> => self.throughput_value
   fun power_demand(): Float64<watt> => self.power_demand_value
+  fun energy_per_mass(): Float64<watt * second / kilogram> =>
+    self.power_demand_value / self.throughput_value
   fun state(): Int64 => self.state_value
   fun is_idle(): Bool => self.state_value == MACHINE_IDLE
   fun is_processing(): Bool => self.state_value == MACHINE_PROCESSING
@@ -154,7 +157,52 @@ class ProcessingMachine {
   }
 }
 
+/// Approximate electric-arc steelmaking: 1.6 MJ/kg at 0.1 kg/s.
+class Steelworks is ProcessingMachine {
+  new() is ProcessingMachine(
+    RecipeCatalog().steel(), 100.0 kilogram,
+    0.1 (kilogram / second), 160000.0 watt) {}
+
+  fun id(): String => "steelworks"
+  fun name(): String => "Steelworks"
+}
+
+/// Polyethylene-like production: 13 MJ/kg at 0.05 kg/s.
+class PolymerPlant is ProcessingMachine {
+  new() is ProcessingMachine(
+    RecipeCatalog().polymer(), 100.0 kilogram,
+    0.05 (kilogram / second), 650000.0 watt) {}
+
+  fun id(): String => "polymer_plant"
+  fun name(): String => "Polymer plant"
+}
+
+/// Electronics fabrication remains a balance-oriented approximation because
+/// real products vary enormously: 25 MJ/kg at 0.01 kg/s.
+class ElectronicsFabricator is ProcessingMachine {
+  new() is ProcessingMachine(
+    RecipeCatalog().electronic_components(), 25.0 kilogram,
+    0.01 (kilogram / second), 250000.0 watt) {}
+
+  fun id(): String => "electronics_fabricator"
+  fun name(): String => "Electronics fabricator"
+}
+
+/// General parts assembly is a gameplay abstraction: 1 MJ/kg at 0.05 kg/s.
+class MaintenancePartsFabricator is ProcessingMachine {
+  new() is ProcessingMachine(
+    RecipeCatalog().maintenance_parts(), 100.0 kilogram,
+    0.05 (kilogram / second), 50000.0 watt) {}
+
+  fun id(): String => "maintenance_parts_fabricator"
+  fun name(): String => "Maintenance-parts fabricator"
+}
+
 export ProcessingMachine
+export Steelworks
+export PolymerPlant
+export ElectronicsFabricator
+export MaintenancePartsFabricator
 export MACHINE_IDLE
 export MACHINE_PROCESSING
 export MACHINE_OUTPUT_BLOCKED
