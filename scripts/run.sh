@@ -75,7 +75,7 @@ case "$host_os" in
       exit 1
     }
     c++ -std=c++23 -Wall -Wextra -Wpedantic -Werror \
-      -Wno-parentheses-equality -DSAGAN_RENDER_UI_BRIDGE \
+      -DSAGAN_RENDER_UI_BRIDGE \
       -include "$render_root/libraries/render/native/ui_gpu_bridge.hpp" \
       -I"$sdl_root/include" build/game/program.cpp \
       "$render_root/examples/ui_gpu_demo.cpp" \
