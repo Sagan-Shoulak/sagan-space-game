@@ -13,6 +13,7 @@ cp tests/fixtures/resource_model/sagan.toml "$fixture/sagan.toml"
 cp tests/fixtures/resource_model/src/main.sagan "$fixture/src/main.sagan"
 cp src/resources.sagan "$fixture/src/resources.sagan"
 cp src/recipes.sagan "$fixture/src/recipes.sagan"
+cp src/machines.sagan "$fixture/src/machines.sagan"
 
 output="$($sagan_executable --run-package "$fixture")"
 if [[ "$output" != *"Resource model test passed"* ]]; then

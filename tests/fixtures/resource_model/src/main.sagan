@@ -22,6 +22,8 @@ import RecipeDefinition from recipes
 import RecipeCatalog from recipes
 import separate_regolith from recipes
 
+import ProcessingMachine from machines
+
 let catalog = ResourceCatalog()
 let h2o = catalog.definition(H2O)
 let steel = catalog.definition(STEEL)
@@ -116,5 +118,66 @@ assert(parts_recipe.inputs().amount(steel) == 50.0 kilogram,
        "Maintenance parts are primarily steel")
 assert(parts_recipe.outputs().amount(parts) == 100.0 kilogram,
        "Maintenance parts recipe conserves its complete mass")
+
+let machine_inventory = MaterialInventory(300.0 kilogram)
+assert(machine_inventory.add!(MaterialStack(catalog.definition(IRON), 99.0 kilogram)),
+       "Machine test receives iron")
+assert(machine_inventory.add!(MaterialStack(catalog.definition(CARBON), 1.0 kilogram)),
+       "Machine test receives carbon")
+let machine_energy = EnergyStore(2000.0 (watt * second), 2000.0 (watt * second))
+let steel_machine = ProcessingMachine(
+  steel_recipe, 100.0 kilogram, 10.0 (kilogram / second), 100.0 watt)
+
+steel_machine.update!(5.0 second, machine_inventory, machine_energy)
+assert(steel_machine.is_processing(), "A partial frame leaves the batch in progress")
+assert(steel_machine.processed_mass() == 50.0 kilogram,
+       "The machine controls processing throughput")
+assert(machine_inventory.amount(catalog.definition(IRON)) == 0.0 kilogram,
+       "A machine reserves its complete batch inputs at startup")
+assert(steel_machine.set_recipe!(polymer_recipe) == false,
+       "An active machine cannot change recipes")
+
+steel_machine.update!(5.0 second, machine_inventory, machine_energy)
+assert(steel_machine.is_idle(), "A deposited batch returns the machine to idle")
+assert(machine_inventory.amount(steel) == 100.0 kilogram,
+       "A completed batch deposits its output")
+assert(machine_energy.charge() == 1000.0 (watt * second),
+       "Machine power demand is consumed continuously")
+assert(steel_machine.set_recipe!(polymer_recipe),
+       "An idle machine can change recipes")
+
+let paused_inventory = MaterialInventory(200.0 kilogram)
+assert(paused_inventory.add!(MaterialStack(catalog.definition(CARBON), 86.0 kilogram)),
+       "Paused machine test receives carbon")
+assert(paused_inventory.add!(MaterialStack(catalog.definition(HYDROGEN), 14.0 kilogram)),
+       "Paused machine test receives hydrogen")
+let empty_energy = EnergyStore(1000.0 (watt * second))
+let polymer_machine = ProcessingMachine(
+  polymer_recipe, 100.0 kilogram, 10.0 (kilogram / second), 100.0 watt)
+polymer_machine.update!(5.0 second, paused_inventory, empty_energy)
+assert(polymer_machine.is_processing(), "A power shortage pauses reserved work")
+assert(polymer_machine.processed_mass() == 0.0 kilogram,
+       "A power shortage does not advance the batch")
+
+let blocked_inventory = MaterialInventory(100.0 kilogram)
+assert(blocked_inventory.add!(MaterialStack(catalog.definition(IRON), 99.0 kilogram)),
+       "Blocked-output test receives iron")
+assert(blocked_inventory.add!(MaterialStack(catalog.definition(CARBON), 1.0 kilogram)),
+       "Blocked-output test receives carbon")
+let blocked_energy = EnergyStore(2000.0 (watt * second), 2000.0 (watt * second))
+let blocked_machine = ProcessingMachine(
+  steel_recipe, 100.0 kilogram, 10.0 (kilogram / second), 100.0 watt)
+blocked_machine.update!(5.0 second, blocked_inventory, blocked_energy)
+assert(blocked_inventory.add!(MaterialStack(h2o, 100.0 kilogram)),
+       "Other base activity can fill storage during processing")
+blocked_machine.update!(5.0 second, blocked_inventory, blocked_energy)
+assert(blocked_machine.output_blocked(),
+       "Completed output waits safely when base storage is full")
+assert(blocked_inventory.remove!(h2o, 100.0 kilogram),
+       "Base orchestration can make room for blocked output")
+blocked_machine.update!(0.0 second, blocked_inventory, blocked_energy)
+assert(blocked_machine.is_idle(), "The base tick retries blocked output deposition")
+assert(blocked_inventory.amount(steel) == 100.0 kilogram,
+       "Buffered output is deposited without loss")
 
 print("Resource model test passed")
