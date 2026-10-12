@@ -1,0 +1,81 @@
+module base_ui_format
+
+class ContextFormat {
+  new() {}
+  fun resource_name(resource: Int64): String {
+    if resource == 0 { return "STEEL" }
+    if resource == 1 { return "ALUMINUM" }
+    if resource == 2 { return "COPPER" }
+    if resource == 3 { return "POLYMERS" }
+    if resource == 4 { return "SILICON" }
+    if resource == 5 { return "WATER" }
+    if resource == 6 { return "ICE" }
+    if resource == 7 { return "OXYGEN" }
+    if resource == 8 { return "HYDROGEN" }
+    if resource == 9 { return "FOOD" }
+    return "REPAIR KITS"
+  }
+
+  fun resource_unit(resource: Int64): String {
+    if resource == 10 { return "items" }
+    return "kg"
+  }
+
+  fun scaled_amount(amount: Int64, unit_label: String): String {
+    let absolute = amount
+    let sign = ""
+    if amount < 0 {
+      absolute = 0 - amount
+      sign = "-"
+    }
+    let kilograms = absolute / 1000
+    let grams = absolute % 1000
+    let suffix = " ${unit_label}"
+    if unit_label == "" { suffix = "" }
+    if grams == 0 { return "${sign}${kilograms}${suffix}" }
+    let fraction = "${grams}"
+    if grams < 100 { fraction = "0${grams}" }
+    if grams < 10 { fraction = "00${grams}" }
+    if grams % 100 == 0 { fraction = "${grams / 100}" }
+    else {
+      if grams % 10 == 0 {
+        fraction = "${grams / 10}"
+        if grams < 100 { fraction = "0${grams / 10}" }
+      }
+    }
+    return "${sign}${kilograms}.${fraction}${suffix}"
+  }
+
+  fun resource_amount(resource: Int64, amount: Int64): String {
+    if self.resource_unit(resource) == "items" { return "${amount} items" }
+    return self.scaled_amount(amount, "kg")
+  }
+
+  fun balance_label(amount: Int64): String {
+    if amount > 0 { return "SURPLUS" }
+    if amount < 0 { return "DEFICIT" }
+    return "NOMINAL"
+  }
+
+  fun signed_amount(amount: Int64, unit_label: String): String {
+    if amount > 0 { return "+${self.scaled_amount(amount, unit_label)}" }
+    return self.scaled_amount(amount, unit_label)
+  }
+
+  fun duration(seconds: Int64): String {
+    if seconds < 60 { return "${seconds} s" }
+    if seconds < 3600 { return "${seconds / 60} m ${seconds % 60} s" }
+    if seconds < 86400 { return "${seconds / 3600} h ${(seconds % 3600) / 60} m" }
+    return "${seconds / 86400} d ${(seconds % 86400) / 3600} h"
+  }
+
+}
+
+fun resource_name(resource: Int64): String => ContextFormat().resource_name(resource)
+fun scaled_amount(amount: Int64, unit_label: String): String => ContextFormat().scaled_amount(amount, unit_label)
+fun resource_amount(resource: Int64, amount: Int64): String => ContextFormat().resource_amount(resource, amount)
+
+export ContextFormat
+export resource_name
+export scaled_amount
+export resource_amount
