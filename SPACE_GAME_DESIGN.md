@@ -32,41 +32,29 @@ Ships may be manned or unmanned and have the following systems:
 
 - Chassis
 - Navigation
-- Communication
-- Sensors
-- Propulsion
-  - Engines
-  - Stability Augmentation System (SAS)
-  - Reaction Control System (RCS)
+- Engines
 - Life support, if manned
 - Storage
   - Fuel
   - Life-support supplies, if manned
-  - Ammunition, if armed
+
+Communication should be abstracted, while sensors should maybe be abstracted.
+Neither should necessarily be a separate system that the player has to install
+and manage. Likewise, the Stability Augmentation System (SAS) and Reaction
+Control System (RCS) should be abstracted as part of a ship's propulsion rather
+than being separate systems.
+
+I'm not sure if ships should be allowed to be autonomous. They should not
+necessarily be able to operate independently without people just because
+automated resource routes exist.
 
 The chassis is the core of a ship and determines what the ship can become. It
 has slots for required systems and may provide additional slots for
 customization.
 
-A chassis may have armor slots that allow armor to be installed. It may also
-have weapon slots that allow weapons to be installed. Other non-mandatory
-chassis slots are called **machine slots** and hold machines. Machines are the
-category for miscellaneous systems, including systems used for research,
-resource extraction, and resource refinement.
-
-#### Trucks
-
-**Truck** is a catchall term for any vehicle intended to operate on the surface
-of a body rather than in space. Like ships, trucks have chassis and slots that
-allow their implementation and capabilities to be customized.
-
-#### Satellites
-
-Although *satellite* technically means anything orbiting another body, this
-document uses the term for artificial, human-made machines placed in space to
-perform a task. While they are not vehicles in the traditional sense,
-satellites share many systems with ships. Consequently, they have chassis and
-slots like ships do.
+Non-mandatory chassis slots are called **machine slots** and hold machines.
+Machines are the category for miscellaneous systems, including systems used
+for research, resource extraction, and resource refinement.
 
 ### Outposts
 
@@ -74,6 +62,7 @@ Outposts are the counterpart to vehicles and have a major role in the game.
 They may be built on a surface, where they are called **bases**, or freestanding
 in space, where they are called **stations**. Like vehicles, outposts have
 chassis composed of slots that allow a base or station to be customized.
+Stations may only be placed at Lagrange points.
 
 ### Drones
 
@@ -88,6 +77,10 @@ For example, a station may have a machine that provides repair drones capable
 of servicing visiting ships. These repair drones need some agency to perform
 their tasks, but they are not considered ships because their activities are
 closer to animations than independent actions.
+
+Trucks should be treated the same way. Planetside trucking is impractical, so
+surface transportation should be handled by drone-like machines rather than
+trucks being first-class entities.
 
 This distinction is clearer when compared with a ship running a resource route
 and transporting materials between planets. That ship should not be assigned
@@ -135,13 +128,6 @@ planned mission to go as planned. NOTE: This has to be carefully guaranteed.
 
 Systems and Machines may consume Resources.
 
-#### Orbital Decay
-
-If something is put into orbit, it will have enough gravitational influence
-affecting it to cause it to eventually have a deteriorating orbit, such that
-orbital corrections would need to be performed by all Ships, Satellites, and
-Stations. This can be mitigated somewhat by placing them in Lagrange points.
-
 #### Power
 
 Power will need to be generated and stored for many things to be able to run. Ships may need nuclear reactors. There may be things like giant space-based solar arrays and beamed-energy technology.
@@ -170,7 +156,7 @@ No system is perfect.
 
 ##### Degradation
 
-Machines will degrade over time and need repair. Your satellite will not last
+Machines will degrade over time and need repair. Your machines will not last
 forever.
 
 
@@ -221,12 +207,13 @@ morale and gives people a temporary buff to their job performance.
 
 #### Population
 
-All the people not employed in the running of the space program. The goal of the
-game is to eventually get as many as you can to a new home among the stars. At
-every step of the journey though, not all of the population will be willing to
-make the move, nor may there be transportation available for everyone. Tough
-choices will need to be made, and some will be made as fait accompli. You can't
-save everyone, but you must save humanity.
+The civilian population is all the people not employed in the running of the
+space program. It should be abstracted rather than simulated as individual
+people. The goal of the game is to eventually get as many as you can to a new
+home among the stars. At every step of the journey though, not all of the
+population will be willing to make the move, nor may there be transportation
+available for everyone. Tough choices will need to be made, and some will be
+made as fait accompli. You can't save everyone, but you must save humanity.
 
 ##### Management
 
@@ -279,28 +266,22 @@ becoming a truly space-faring civilization.
 
 There will be one.
 
-#### Combat (Unresolved)
-
-It would be so disappointing to have no combat in this game.
-
-##### Enemy Factions (Unresolved)
-
-In the solar system, there should be some sort of enemy faction to get the
-player familiar with combat, or else it may be the only combat in the game and
-would persist throughout. This has to be balanced against the fact that Earth
-would have likely united a fair amount behind the shared goal of surviving
-eradication.
-
-##### Enemy Aliens (Unresolved)
-
-In other star systems, the player may find hostile entities, which may have
-been tutorialized by enemy factions in the solar system. This allows a robust
-and varied combat experience moving forward.
-
 #### Fleet Management
 
 Vehicle and Outpost Management is the absolute core of the game and the vast
 majority of the game loop.
+
+### Endgame and New Game Plus
+
+The game "ends" when you leave the current star system for the next one. In
+each subsequent star system, the most habitable planet will be slightly more
+habitable than the previous system's most habitable planet.
+
+In the Solar System, Earth will start as the most habitable planet, but Mars
+will take over as Earth deteriorates. The most habitable planet in the next
+star system will therefore be somewhat more habitable than Mars. If you choose
+to continue playing after settling on that planet, you will have begun a New
+Game Plus in the new star system.
 
 ## Physics
 
@@ -310,11 +291,6 @@ Lagrange points. The exact simulation model remains to be defined.
 One important facet is how we're going to simulate gravity. Certain things
 should be true:
 
-- A Ship, Satellite, or Station placed in an orbit should not be able to remain
-  in that orbit indefinitely but should experience solar pressure and/or
-  gravitational perturbations from other bodies such that, if unmanaged, the
-  orbit will decay over time, requiring all orbiting Entities to make orbital
-  correction maneuvers over time, making there no free lunch in this universe.
 - Natural bodies should not be able to deviate from their true and defined
   orbits due to our bad math, while some should be able to be moved by the
   player. We have not yet ruled out the idea that the player may be able to
@@ -350,12 +326,13 @@ most intensive part of the game.
 2. Get outposts up and rocking, so we can begin the work on the resource
    management part, and when it's time to get to ships we can actually build
    them using the gameplay from this step.
-3. Vehicles enter the battlefield. Once we have both outposts and vehicles
+3. Vehicles enter the picture. Once we have both outposts and vehicles
    supported, the vast majority of gameplay is ready to be developed.
 4. Drones, a small milestone but needs to stand on its own.
 5. UI polishing. We'll need to get this to actually look and feel like a game at this step, even if asset quality is terrible.
 
-Steps 1-5 should begin as a vertical slice: Earth and Moon, a few bases, a few stations, a few ships, a few trucks, etc.
+Steps 1-5 should begin as a vertical slice: Earth and Moon, a few bases, a few
+stations, a few ships, and a few different kinds of drones.
 
 6. Mechanical refinement. Make sure that we have a strong understanding of what
    game balance looks like, and what levers we have to pull. We should be able
@@ -384,7 +361,10 @@ Steps 1-5 should begin as a vertical slice: Earth and Moon, a few bases, a few s
 
 ## Known Questions
 
-- What exists outside the Solar System?
-- How is orbit stabilization handled?
-  - I am considering that, unless acted on by an outisde force, all orbits are frozen. For Natural bodies, this means that unless a ship is pushing a small body, gravity is not being actively calculated, but their paths are more happening like animations. For bodies being acted on (like a ship or base pushing one), gravity would be calculated to make sure the orbit is being accurately updated. For entities like sattions, ships, and satellites, their 1km deviation time would be calculated, as would the fuel required to rendezvous back to the correction point. This fuel usage / mechanical degradation could then either be used in a manuever at the specificed time intervals, or could be continuously drained from the vehicle such that it is "constantly correcting" to the proper orbital position, and stays animated like the natural bodies until it runs out of fuel. All of this would allow for basically zero gravitational calculations unless an entity is out of fuel or a massive object is being pushed by a ship or base. We could also limit the timescale during those operations, such that we limit the rendering speed when we have to do true gravity calculations. The downside would be not allowing the player to fast forward while a ship is out of fuel could be incredibly inconvenient, so probably avoided I guess.
-- Which systems for a ship provide real and interesting gameplay changes? For example, what do better sensors for a ship actually do? Better navigation? For some of the more subtle systems, we need to decide if they're better in your face and customizable, or behinjd the scenes and abstracted.
+- What exists in each subsequent star system besides an increasingly habitable
+  planet?
+- Should ships be allowed to be autonomous?
+- Which systems for a ship provide real and interesting gameplay changes? For
+  example, what does better navigation actually do? For some of the more subtle
+  systems, we need to decide if they're better in your face and customizable,
+  or behind the scenes and abstracted.
