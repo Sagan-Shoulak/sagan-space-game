@@ -91,6 +91,7 @@ jobs:
           export SAGAN_RENDER_SOURCE_ROOT="$GITHUB_WORKSPACE/render"
           export SAGAN_PACKAGE_INDEX="$(bash scripts/resolve-packages.sh)"
           bash -n scripts/*.sh tests/integration/*.sh
+          bash tests/integration/compiler_rollout_test.sh
           bash tests/integration/game_seed_test.sh
           export SAGAN_RENDER_CMAKE_BOOTSTRAP=1
           export SAGAN_RENDER_CMAKE_GENERATOR='Unix Makefiles'
@@ -118,6 +119,7 @@ jobs:
           mkdir -p build/ci
           bash -n scripts/resolve-sagan.sh scripts/resolve-physics.sh scripts/resolve-render.sh scripts/resolve-packages.sh scripts/run.sh
           "$SAGAN_EXECUTABLE" --emit-cpp-package . build/ci/program.cpp
+          bash tests/integration/compiler_rollout_test.sh
           bash tests/integration/game_seed_test.sh
       - name: Run game seed (Windows)
         if: runner.os == 'Windows'
@@ -132,4 +134,5 @@ jobs:
           mkdir -p build/ci
           bash -n scripts/resolve-sagan.sh scripts/resolve-physics.sh scripts/resolve-render.sh scripts/resolve-packages.sh scripts/run.sh
           "$SAGAN_EXECUTABLE" --emit-cpp-package . build/ci/program.cpp
+          bash tests/integration/compiler_rollout_test.sh
           bash tests/integration/game_seed_test.sh

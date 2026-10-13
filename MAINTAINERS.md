@@ -40,7 +40,9 @@ On the first run, `scripts/resolve-sagan.sh` clones the exact commit in
 `build/sagan-physics-pinned-<commit>/`. `scripts/resolve-render.sh` clones the
 exact `sagan-render-commit.txt` commit under
 `build/sagan-render-pinned-<commit>/`; `scripts/resolve-packages.sh` composes
-both packages into an ignored relative-path catalog. The launcher emits and
+the compiler checkout's `sagan-time` library, physics package, and rendering
+package into an ignored relative-path catalog keyed by all three source pins.
+The launcher emits and
 links one native windowed executable using the renderer's SDL resolver. An
 incomplete cache is preserved with an `.incomplete-<timestamp>` suffix rather
 than overwritten. The first run requires network access, Git, Make, curl,
@@ -85,6 +87,10 @@ directly into the fixed local Shackleton Base view and continues until the
 window closes. The standalone numeric fixture
 still advances fourteen 0.1-second steps, reaches 35 watt-seconds of stored
 charge with 86 kilograms each of water, food, and oxygen, then exits zero.
+`bash tests/integration/compiler_rollout_test.sh` checks the pinned compiler's
+native monotonic time package and the dictionary syntax used by application
+code, including static word keys, dot and bracket access, explicit computed
+keys, and missing-key failures.
 The manifest currently names the package `Sandbox`, retained from the seed;
 rename it only after the owner chooses the game's package identity.
 
