@@ -32,6 +32,7 @@ case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) executable_name="sagan.exe" ;;
 esac
 cached_executable="$source_root/bin/$executable_name"
+built_pin_file="$source_root/.sagan-built-commit"
 
 command -v git >/dev/null 2>&1 || \
   fail "'git' is required to fetch pinned Sagan $short_pin"
@@ -51,7 +52,11 @@ fi
 
 if [[ -x "$cached_executable" ]]; then
   cached_pin="$(git -C "$source_root" rev-parse HEAD 2>/dev/null || true)"
-  if [[ "$cached_pin" == "$pin" ]]; then
+  built_pin=""
+  if [[ -f "$built_pin_file" ]]; then
+    built_pin="$(tr -d '\r\n' < "$built_pin_file")"
+  fi
+  if [[ "$cached_pin" == "$pin" && "$built_pin" == "$pin" ]]; then
     echo "Using cached Sagan compiler for $short_pin." >&2
     printf '%s\n' "$cached_executable"
     exit 0
@@ -68,6 +73,11 @@ echo "Preparing exact Sagan source commit $pin..." >&2
 git -C "$source_root" fetch origin "$pin" >&2
 git -C "$source_root" checkout --detach "$pin" >&2
 
+if [[ -x "$cached_executable" ]]; then
+  echo "Discarding unverified cached compiler artifact for $short_pin..." >&2
+  "$make_command" -C "$source_root" clean >&2
+fi
+
 jobs="${SAGAN_BUILD_JOBS:-2}"
 [[ "$jobs" =~ ^[1-9][0-9]*$ ]] || \
   fail "SAGAN_BUILD_JOBS must be a positive integer"
@@ -76,5 +86,6 @@ echo "Building pinned Sagan compiler with $jobs jobs..." >&2
 
 [[ -x "$cached_executable" ]] || \
   fail "build completed without producing $cached_executable"
+printf '%s\n' "$pin" > "$built_pin_file"
 echo "Pinned Sagan compiler is ready at $cached_executable" >&2
 printf '%s\n' "$cached_executable"
