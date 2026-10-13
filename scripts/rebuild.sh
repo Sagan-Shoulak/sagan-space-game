@@ -14,9 +14,18 @@ fi
 mkdir -p build/tmp
 
 sagan_executable="$(bash scripts/resolve-sagan.sh)"
-physics_root="$(bash scripts/resolve-physics.sh)"
 render_root="$(bash scripts/resolve-render.sh)"
-package_index="$(bash scripts/resolve-packages.sh)"
+if [[ -n "${SAGAN_PACKAGE_INDEX:-}" ]]; then
+  [[ -f "$SAGAN_PACKAGE_INDEX" ]] || {
+    echo "error: SAGAN_PACKAGE_INDEX is not a file: $SAGAN_PACKAGE_INDEX" >&2
+    exit 1
+  }
+  package_index="$(cd "$(dirname "$SAGAN_PACKAGE_INDEX")" && pwd)/$(basename "$SAGAN_PACKAGE_INDEX")"
+  physics_index="$package_index"
+else
+  physics_index="$(bash scripts/resolve-physics.sh)"
+  package_index="$(bash scripts/resolve-packages.sh)"
+fi
 
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*)
@@ -43,6 +52,6 @@ esac
 
 printf 'Dependencies ready:\n'
 printf '  compiler: %s\n' "$sagan_executable"
-printf '  physics: %s\n' "$physics_root"
+printf '  physics: %s\n' "$physics_index"
 printf '  renderer: %s\n' "$render_root"
 printf '  packages: %s\n' "$package_index"
