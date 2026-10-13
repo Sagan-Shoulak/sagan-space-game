@@ -1,0 +1,56 @@
+module main
+
+import resources as model
+
+let base = model.ResourceBundle(
+  10 (watt * hour), 10 kilogram, 20 kilogram, 30 kilogram,
+  40 kilogram, 50 kilogram, 60 kilogram, 70 kilogram, 80 kilogram)
+let delta = model.ResourceBundle(
+  1 (watt * hour), 1 kilogram, 2 kilogram, 3 kilogram,
+  4 kilogram, 5 kilogram, 6 kilogram, 7 kilogram, 8 kilogram)
+
+let expected_sum = model.ResourceBundle(
+  11 (watt * hour), 11 kilogram, 22 kilogram, 33 kilogram,
+  44 kilogram, 55 kilogram, 66 kilogram, 77 kilogram, 88 kilogram)
+let sum = base + delta
+assert(sum.canAfford(expected_sum) and expected_sum.canAfford(sum))
+
+let mutable_sum = model.ResourceBundle(
+  10 (watt * hour), 10 kilogram, 20 kilogram, 30 kilogram,
+  40 kilogram, 50 kilogram, 60 kilogram, 70 kilogram, 80 kilogram)
+mutable_sum += delta
+assert(mutable_sum.canAfford(expected_sum) and expected_sum.canAfford(mutable_sum))
+
+let expected_difference = model.ResourceBundle(
+  9 (watt * hour), 9 kilogram, 18 kilogram, 27 kilogram,
+  36 kilogram, 45 kilogram, 54 kilogram, 63 kilogram, 72 kilogram)
+let difference = base - delta
+assert(difference.canAfford(expected_difference) and expected_difference.canAfford(difference))
+
+let mutable_difference = model.ResourceBundle(
+  10 (watt * hour), 10 kilogram, 20 kilogram, 30 kilogram,
+  40 kilogram, 50 kilogram, 60 kilogram, 70 kilogram, 80 kilogram)
+mutable_difference -= delta
+assert(mutable_difference.canAfford(expected_difference) and
+       expected_difference.canAfford(mutable_difference))
+
+let explicit_resources = {
+  (model.MassiveResource.oxygen): 2.0 kilogram,
+  (model.MassiveResource.hydrogen): 3.0 kilogram,
+  (model.MassiveResource.water): 4.0 kilogram,
+  (model.MassiveResource.food): 5.0 kilogram,
+  (model.MassiveResource.iron): 6.0 kilogram,
+  (model.MassiveResource.carbon): 7.0 kilogram,
+  (model.MassiveResource.carbonDioxide): 8.0 kilogram,
+  (model.MassiveResource.steel): 9.0 kilogram
+}
+let explicit_bundle = model.ResourceBundle(1 (watt * hour), explicit_resources)
+let explicit_expected = model.ResourceBundle(
+  1 (watt * hour), 2 kilogram, 3 kilogram, 4 kilogram,
+  5 kilogram, 6 kilogram, 7 kilogram, 8 kilogram, 9 kilogram)
+assert(explicit_bundle.canAfford(explicit_expected) and
+       explicit_expected.canAfford(explicit_bundle))
+assert(base.canAfford(delta))
+assert(delta.canAfford(base) == false)
+
+print("ResourceBundle test passed")

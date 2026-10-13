@@ -11,89 +11,102 @@ enum MassiveResource {
   steel
 }
 
+// watt hours for stored charge
+
 class ResourceBundle {
-  let storedCharge: watt
-  let massiveResources: Dictionary<MassiveResource, kilogram> = {}
-  for resource in MassiveResource {
-    massiveResources[resource] = 0 kilogram
-  } 
+  let storedCharge: Float64<watt * hour>
+  let massiveResources: Dictionary<MassiveResource, Float64<kilogram>>
 
   new(
-    storedCharge: watt = 0 watt
-    oxygen: kilogram = 0 kilogram
-    hydrogen: kilogram = 0 kilogram
-    water: kilogram = 0 kilogram
-    food: kilogram = 0 kilogram
-    iron: kilogram = 0 kilogram
-    carbon: kilogram = 0 kilogram
-    carbonDioxide: kilogram = 0 kilogram
-    steel: kilogram = 0 kilogram
+    storedCharge: Float64<watt * hour> = 0 (watt * hour),
+    oxygen: Float64<kilogram> = 0 (kilogram),
+    hydrogen: Float64<kilogram> = 0 (kilogram),
+    water: Float64<kilogram> = 0 (kilogram),
+    food: Float64<kilogram> = 0 (kilogram),
+    iron: Float64<kilogram> = 0 (kilogram),
+    carbon: Float64<kilogram> = 0 (kilogram),
+    carbonDioxide: Float64<kilogram> = 0 (kilogram),
+    steel: Float64<kilogram> = 0 (kilogram)
   ) {
     self.storedCharge = storedCharge
     self.massiveResources = {
-      self.massiveResources[MassiveResource.oxygen] = oxygen,
-      self.massiveResources[MassiveResource.hydrogen] = hydrogen,
-      self.massiveResources[MassiveResource.water] = water,
-      self.massiveResources[MassiveResource.food] = food,
-      self.massiveResources[MassiveResource.iron] = iron,
-      self.massiveResources[MassiveResource.carbon] = carbon,
-      self.massiveResources[MassiveResource.carbonDioxide] = carbonDioxide,
-      self.massiveResources[MassiveResource.steel] = steel
+      (MassiveResource.oxygen): oxygen,
+      (MassiveResource.hydrogen): hydrogen,
+      (MassiveResource.water): water,
+      (MassiveResource.food): food,
+      (MassiveResource.iron): iron,
+      (MassiveResource.carbon): carbon,
+      (MassiveResource.carbonDioxide): carbonDioxide,
+      (MassiveResource.steel): steel
     }
   }
 
-  new(storedCharge: watt = 0 watt, massiveResources: Dictionary<MassiveResource, kilogram) {
-    self.storedCharge = storedCharge,
-    self.massiveResources = {
-      ...self.massiveResources,
-      ...massiveResources
-    } 
+  new(storedCharge: Float64<watt * hour>,
+      massiveResources: Dictionary<MassiveResource, Float64<kilogram>>) {
+    self.storedCharge = storedCharge
+    self.massiveResources = massiveResources
   }
 
-  fun +(other: ResourceBundle) {
-    let newMassiveResources = {}
-    for resource in MassiveResource {
-      newMassiveResources[resource] = self.massiveResources[resource] + other.massiveResources[resource]
-    }
-
-    return ResourceBundle(
-      self.storedCharge + other.storedCharge, newMassiveResources
-    )
-  }
-
-  fun +=(other: ResourceBundle) {
-    self.storedCharge += other.storedCharge,
+  fun +=(other: ResourceBundle): Void {
+    self.storedCharge += other.storedCharge
     for resource in MassiveResource {
       self.massiveResources[resource] += other.massiveResources[resource]
     }
   }
 
-  fun -(other: ResourceBundle) {
-    let newMassiveResources = {}
-    for resource in MassiveResource {
-      newMassiveResources[resource] = self.massiveResources[resource] - other.massiveResources[resource]
-    }
-
-    return ResourceBundle(
-      self.storedCharge - other.storedCharge, newMassiveResources
+  fun +(other: ResourceBundle): ResourceBundle {
+    let newBundle = ResourceBundle(
+      self.storedCharge,
+      self.massiveResources[MassiveResource.oxygen],
+      self.massiveResources[MassiveResource.hydrogen],
+      self.massiveResources[MassiveResource.water],
+      self.massiveResources[MassiveResource.food],
+      self.massiveResources[MassiveResource.iron],
+      self.massiveResources[MassiveResource.carbon],
+      self.massiveResources[MassiveResource.carbonDioxide],
+      self.massiveResources[MassiveResource.steel]
     )
+
+    newBundle += other
+
+    return newBundle
   }
 
-  fun -=(other: ResourceBundle) {
-    self.storedCharge -= other.storedCharge,
+  fun -=(other: ResourceBundle): Void {
+    self.storedCharge -= other.storedCharge
     for resource in MassiveResource {
       self.massiveResources[resource] -= other.massiveResources[resource]
     }
   }
+
+  fun -(other: ResourceBundle): ResourceBundle {
+    let newBundle = ResourceBundle(
+      self.storedCharge,
+      self.massiveResources[MassiveResource.oxygen],
+      self.massiveResources[MassiveResource.hydrogen],
+      self.massiveResources[MassiveResource.water],
+      self.massiveResources[MassiveResource.food],
+      self.massiveResources[MassiveResource.iron],
+      self.massiveResources[MassiveResource.carbon],
+      self.massiveResources[MassiveResource.carbonDioxide],
+      self.massiveResources[MassiveResource.steel]
+    )
+
+    newBundle -= other
+
+    return newBundle
+  }
   
-  fun canAfford(other: ResourceBundle) => (
-    if self.storedChargeCharge < other.storedCharge return false
+  fun canAfford(other: ResourceBundle): Bool {
+    if self.storedCharge < other.storedCharge { return false }
 
     for resource in MassiveResource {
-      if self.massiveResources[resource] < other.massiveResources[resource] return false
+      if self.massiveResources[resource] < other.massiveResources[resource] { return false }
     }
 
     return true
-  )
+  }
 }
 
+export MassiveResource
+export ResourceBundle
