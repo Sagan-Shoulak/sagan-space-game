@@ -1,250 +1,83 @@
 module resources
 
-const H2O: Int64 = 0
-const OXYGEN: Int64 = 1
-const HYDROGEN: Int64 = 2
-const FOOD: Int64 = 3
-const CARBON_DIOXIDE: Int64 = 4
-const REGOLITH: Int64 = 5
-const IRON: Int64 = 6
-const CARBON: Int64 = 7
-const STEEL: Int64 = 8
-const ALUMINUM: Int64 = 9
-const COPPER: Int64 = 10
-const SILICON: Int64 = 11
-const POLYMER: Int64 = 12
-const ELECTRONIC_COMPONENTS: Int64 = 13
-const MAINTENANCE_PARTS: Int64 = 14
-const RESOURCE_COUNT: Int64 = 15
-
-/// Stable resource identity and player-facing name. Quantities live in stacks
-/// and inventories so definitions can be shared safely.
-class ResourceDefinition {
-  let index_value: Int64
-  let id_value: String
-  let name_value: String
-
-  new(index: Int64, id: String, name: String) {
-    assert(index >= 0 and index < RESOURCE_COUNT,
-           "Resource definition index is outside the catalog")
-    self.index_value = index
-    self.id_value = id
-    self.name_value = name
-  }
-
-  fun index(): Int64 => self.index_value
-  fun id(): String => self.id_value
-  fun name(): String => self.name_value
+enum MassiveResource {
+  oxygen
+  water
+  food
+  iron
+  carbon
+  steel
 }
 
-/// The deliberately small vertical-slice catalog. H2O is one resource whether
-/// it is currently ice, liquid water, or vapor.
-class ResourceCatalog {
-  fun count(): Int64 => RESOURCE_COUNT
+class ResourceBundle {
+  let storedCharge: watt
+  let massiveResources: Dictionary<MassiveResource, kilogram>
 
-  fun definition(index: Int64): ResourceDefinition {
-    assert(index >= 0 and index < RESOURCE_COUNT,
-           "Resource catalog index is outside the catalog")
-    if index == H2O { return ResourceDefinition(index, "h2o", "H2O") }
-    if index == OXYGEN { return ResourceDefinition(index, "oxygen", "Oxygen") }
-    if index == HYDROGEN { return ResourceDefinition(index, "hydrogen", "Hydrogen") }
-    if index == FOOD { return ResourceDefinition(index, "food", "Food") }
-    if index == CARBON_DIOXIDE {
-      return ResourceDefinition(index, "carbon_dioxide", "Carbon dioxide")
+  new(
+    storedCharge: watt = 0
+    oxygen: kilogram = 0
+    water: kilogram = 0
+    food: kilogram = 0
+    iron: kilogram = 0
+    carbon: kilogram = 0
+  ) {
+    self.storedCharge = storedCharge
+    self.massiveResources = {
+      MassiveResource.oxygen = oxygen,
+      MassiveResource.water = water,
+      MassiveResource.food = food,
+      MassiveResource.iron = iron,
+      MassiveResource.carbon = carbon,
     }
-    if index == REGOLITH { return ResourceDefinition(index, "regolith", "Regolith") }
-    if index == IRON { return ResourceDefinition(index, "iron", "Iron") }
-    if index == CARBON { return ResourceDefinition(index, "carbon", "Carbon") }
-    if index == STEEL { return ResourceDefinition(index, "steel", "Steel") }
-    if index == ALUMINUM { return ResourceDefinition(index, "aluminum", "Aluminum") }
-    if index == COPPER { return ResourceDefinition(index, "copper", "Copper") }
-    if index == SILICON { return ResourceDefinition(index, "silicon", "Silicon") }
-    if index == POLYMER { return ResourceDefinition(index, "polymer", "Polymer") }
-    if index == ELECTRONIC_COMPONENTS {
-      return ResourceDefinition(index, "electronic_components", "Electronic components")
+  }
+
+  new(storedCharge: watt = 0, massiveResources: Dictionary<MassiveResource, kilogram) {
+    self.storedCharge = storedCharge,
+    self.massiveResources = massiveResources
+  }
+
+  fun +(other: ResourceBundle) =>
+    let newMassiveResources = {}
+    for resource in MassiveResource {
+      newMassiveResources[resource] = self.massiveResources[resource] + other.massiveResources[resource]
     }
-    return ResourceDefinition(index, "maintenance_parts", "Maintenance parts")
-  }
-}
 
-class MaterialStack {
-  let definition_value: ResourceDefinition
-  let amount_value: Float64<kilogram>
+     ResourceBundle(
+      self.storedCharge + other.storedCharge, newMassiveResources
+    )
 
-  new(definition: ResourceDefinition, amount: Float64<kilogram>) {
-    assert(amount >= 0.0 kilogram, "Material stack amount must be non-negative")
-    self.definition_value = definition
-    self.amount_value = amount
-  }
-
-  fun definition(): ResourceDefinition => self.definition_value
-  fun amount(): Float64<kilogram> => self.amount_value
-}
-
-/// Mass-limited storage for ordinary materials. Regolith stockpiles are kept
-/// separately because their source compositions must not be merged.
-class MaterialInventory {
-  let capacity_value: Float64<kilogram>
-  let amounts: Array<Float64<kilogram>>
-
-  new(capacity: Float64<kilogram>) {
-    assert(capacity >= 0.0 kilogram, "Inventory capacity must be non-negative")
-    self.capacity_value = capacity
-    self.amounts = [
-      0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
-      0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
-      0.0 kilogram, 0.0 kilogram, 0.0 kilogram, 0.0 kilogram,
-      0.0 kilogram, 0.0 kilogram, 0.0 kilogram
-    ]
-  }
-
-  fun capacity(): Float64<kilogram> => self.capacity_value
-
-  fun stored_mass(): Float64<kilogram> {
-    let total: Float64<kilogram> = 0.0 kilogram
-    let index: Int64 = 0
-    while index < RESOURCE_COUNT {
-      total += self.amounts[index]
-      index += 1
+  fun +=(other: ResourceBundle) {
+    self.storedCharge += other.storedCharge,
+    for resource in MassiveResource {
+      self.massiveResources[resource] += other.massiveResources[resource]
     }
-    return total
   }
 
-  fun available_capacity(): Float64<kilogram> => self.capacity_value - self.stored_mass()
-
-  fun amount(definition: ResourceDefinition): Float64<kilogram> =>
-    self.amounts[definition.index()]
-
-  fun contains(definition: ResourceDefinition, amount: Float64<kilogram>): Bool =>
-    amount >= 0.0 kilogram and self.amount(definition) >= amount
-
-  fun add!(stack: MaterialStack): Bool {
-    if stack.definition().index() == REGOLITH { return false }
-    if stack.amount() > self.available_capacity() { return false }
-    let index = stack.definition().index()
-    self.amounts[index] += stack.amount()
-    return true
-  }
-
-  fun remove!(definition: ResourceDefinition, amount: Float64<kilogram>): Bool {
-    if definition.index() == REGOLITH { return false }
-    if amount < 0.0 kilogram or self.amount(definition) < amount { return false }
-    let index = definition.index()
-    self.amounts[index] -= amount
-    return true
-  }
-}
-
-/// Battery-like stored energy stays separate from mass-based material storage.
-class EnergyStore {
-  let capacity_value: Float64<watt * second>
-  let charge_value: Float64<watt * second>
-
-  new(capacity: Float64<watt * second>, charge: Float64<watt * second> = 0.0 (watt * second)) {
-    assert(capacity >= 0.0 (watt * second), "Energy capacity must be non-negative")
-    assert(charge >= 0.0 (watt * second) and charge <= capacity,
-           "Initial charge must fit in the energy store")
-    self.capacity_value = capacity
-    self.charge_value = charge
-  }
-
-  fun capacity(): Float64<watt * second> => self.capacity_value
-  fun charge(): Float64<watt * second> => self.charge_value
-
-  fun add!(amount: Float64<watt * second>): Bool {
-    if amount < 0.0 (watt * second) or self.charge_value + amount > self.capacity_value {
-      return false
+  fun -(other: ResourceBundle) =>
+    let newMassiveResources = {}
+    for resource in MassiveResource {
+      newMassiveResources[resource] = self.massiveResources[resource] - other.massiveResources[resource]
     }
-    self.charge_value += amount
-    return true
-  }
 
-  fun consume!(amount: Float64<watt * second>): Bool {
-    if amount < 0.0 (watt * second) or amount > self.charge_value { return false }
-    self.charge_value -= amount
-    return true
+     ResourceBundle(
+      self.storedCharge - other.storedCharge, newMassiveResources
+    )
+
+  fun -=(other: ResourceBundle) {
+    self.storedCharge -= other.storedCharge,
+    for resource in MassiveResource {
+      self.massiveResources[resource] -= other.massiveResources[resource]
+    }
   }
+  
+  fun canAfford(other: ResourceBundle) => (
+    if self.storedChargeCharge < other.storedCharge return false
+
+    for resource in MassiveResource {
+      if self.massiveResources[resource] < other.massiveResources[resource] return false
+    }
+
+    return true
+  )
 }
 
-/// Complete mass fractions for regolith extracted at one base site. Sifting
-/// consumes the regolith and separates all of its mass into these constituents.
-class RegolithComposition {
-  let source_site_id_value: String
-  let fractions: Array<Float64>
-
-  new(source_site_id: String, h2o: Float64, iron: Float64,
-      carbon: Float64, aluminum: Float64,
-      copper: Float64, silicon: Float64) {
-    assert(h2o >= 0.0 and iron >= 0.0 and carbon >= 0.0 and
-           aluminum >= 0.0 and copper >= 0.0 and silicon >= 0.0,
-           "Regolith fractions must be non-negative")
-    let total = h2o + iron + carbon + aluminum + copper + silicon
-    assert(total >= 0.999999999 and total <= 1.000000001,
-           "Regolith fractions must account for its complete mass")
-    self.source_site_id_value = source_site_id
-    self.fractions = [
-      h2o, 0.0, 0.0, 0.0, 0.0, 0.0, iron, carbon, 0.0,
-      aluminum, copper, silicon, 0.0, 0.0, 0.0
-    ]
-  }
-
-  fun source_site_id(): String => self.source_site_id_value
-  fun fraction(definition: ResourceDefinition): Float64 =>
-    self.fractions[definition.index()]
-}
-
-/// One transportable regolith stockpile from one source site. A destination
-/// base keeps different source compositions in separate stockpiles.
-class RegolithStockpile {
-  let composition_value: RegolithComposition
-  let amount_value: Float64<kilogram>
-
-  new(composition: RegolithComposition, amount: Float64<kilogram>) {
-    assert(amount >= 0.0 kilogram, "Regolith stockpile amount must be non-negative")
-    self.composition_value = composition
-    self.amount_value = amount
-  }
-
-  fun composition(): RegolithComposition => self.composition_value
-  fun amount(): Float64<kilogram> => self.amount_value
-
-  fun same_source(other: RegolithStockpile): Bool =>
-    self.composition_value.source_site_id() == other.composition().source_site_id()
-
-  fun add!(amount: Float64<kilogram>): Bool {
-    if amount < 0.0 kilogram { return false }
-    self.amount_value += amount
-    return true
-  }
-
-  fun remove!(amount: Float64<kilogram>): Bool {
-    if amount < 0.0 kilogram or amount > self.amount_value { return false }
-    self.amount_value -= amount
-    return true
-  }
-}
-
-export ResourceDefinition
-export ResourceCatalog
-export MaterialStack
-export MaterialInventory
-export EnergyStore
-export RegolithComposition
-export RegolithStockpile
-
-export H2O
-export OXYGEN
-export HYDROGEN
-export FOOD
-export CARBON_DIOXIDE
-export REGOLITH
-export IRON
-export CARBON
-export STEEL
-export ALUMINUM
-export COPPER
-export SILICON
-export POLYMER
-export ELECTRONIC_COMPONENTS
-export MAINTENANCE_PARTS
-export RESOURCE_COUNT
