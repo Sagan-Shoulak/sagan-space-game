@@ -42,6 +42,8 @@ ignored caches, creates one package catalog containing the compiler-pinned
 the renderer's native host against pinned SDL, and runs from the renderer root
 so its reviewed shaders and planetary assets remain available. These exact
 source pins are development integration inputs, not released-package evidence.
+`scripts/rebuild.sh` performs only the dependency preparation portion;
+`scripts/run.sh` calls it before compiling and optionally launching the game.
 On macOS the host uses SDL's Metal backend and renderer-owned MSL shaders.
 The launcher builds the renderer's pinned SDL source and embeds its library
 search path in the native executable. `scripts/run.sh --build-only` builds
