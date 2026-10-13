@@ -1,0 +1,41 @@
+module base_ui_catalog
+
+/// Application-owned fixture data, not renderer API or production game rules.
+/// The chassis owns capacity and restrictions. This demo supplies one plain form.
+class DemoChassis {
+  fun name(): String => "PLAIN CHASSIS"
+  fun mandatory_slots(): Int64 => 4
+  fun machine_slots(): Int64 => 4
+  fun mandatory_type(slot: Int64): Int64 {
+    if slot < 0 { return 0 }
+    if slot >= self.mandatory_slots() { return 0 }
+    return slot + 1
+  }
+}
+
+fun system_name(kind: Int64): String {
+  if kind == 1 { return "SOLAR POWER SYSTEM" }
+  if kind == 2 { return "BATTERY SYSTEM" }
+  if kind == 3 { return "LIFE SUPPORT SYSTEM" }
+  if kind == 4 { return "STORAGE SYSTEM" }
+  return "UNKNOWN SYSTEM"
+}
+
+fun machine_name(kind: Int64): String {
+  if kind == 1 { return "REGOLITH SIFTER" }
+  if kind == 2 { return "MINING DRILL" }
+  if kind == 3 { return "ELECTROLYSIS PLANT" }
+  if kind == 4 { return "REPAIR KIT FABRICATOR" }
+  return "EMPTY SLOT"
+}
+fun machine_slot_name(slot: Int64): String {
+  if slot == 0 { return "MACHINE SLOT 01" }
+  if slot == 1 { return "MACHINE SLOT 02" }
+  if slot == 2 { return "MACHINE SLOT 03" }
+  return "MACHINE SLOT 04"
+}
+
+export DemoChassis
+export system_name
+export machine_name
+export machine_slot_name

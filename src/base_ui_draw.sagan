@@ -1,0 +1,307 @@
+module base_ui_draw
+
+import fill from render.ui
+import text from render.ui
+import width from render.ui
+import height from render.ui
+import BaseUIState from base_ui
+import system_name from base_ui_catalog
+import machine_name from base_ui_catalog
+import machine_slot_name from base_ui_catalog
+import resource_name from base_ui_format
+import resource_amount from base_ui_format
+import scaled_amount from base_ui_format
+
+fun base_status(state: BaseUIState): String {
+  return state.status()
+}
+
+fun draw_card(state: BaseUIState, control: Int64, x: Float64, y: Float64,
+               card_width: Float64, card_height: Float64): Void {
+  if state.enabled(control) == false {
+    fill(x, y, card_width, card_height, 36, 55, 82)
+    return
+  }
+  fill(x, y, card_width, card_height, 23, 59, 94)
+  if state.hovered() == control { fill(x, y, card_width, card_height, 38, 78, 116) }
+  if state.focused() == control { fill(x, y, card_width, card_height, 55, 125, 181) }
+  if state.pressed() == control { fill(x, y, card_width, card_height, 55, 125, 181) }
+}
+
+fun body_text(state: BaseUIState, x: Float64, y: Float64,
+                label: String, size: Float64,
+                red: Int64, green: Int64, blue: Int64): Void {
+  let top = y - state.scroll()
+  if state.visible(top, size) { text(x, top, label, size, red, green, blue) }
+}
+
+fun status_text(state: BaseUIState, system: Int64, x: Float64, y: Float64,
+                label: String, size: Float64): Void {
+  if state.system_warning(system) { text(x, y, label, size, 255, 212, 91) }
+  else { text(x, y, label, size, 142, 203, 255) }
+}
+
+fun balance_text(state: BaseUIState, resource: Int64, x: Float64, y: Float64,
+                 label: String, size: Float64): Void {
+  let status = state.balance_state(resource)
+  if status == "DEFICIT" or status == "EMPTY" { body_text(state, x, y, label, size, 255, 132, 132) }
+  else {
+    if status == "SURPLUS" { body_text(state, x, y, label, size, 86, 222, 157) }
+    else { body_text(state, x, y, label, size, 142, 164, 188) }
+  }
+}
+
+fun draw_balance_row(state: BaseUIState, resource: Int64, x: Float64, y: Float64): Void {
+  balance_text(state, resource, x, y, state.balance_line(resource), 8.0)
+  balance_text(state, resource, x, y + 15.0, state.reserve_line(resource), 7.0)
+}
+
+fun draw_summary_card(state: BaseUIState, control: Int64, system: Int64): Void {
+  let left = state.card_left(control)
+  let card_width = state.summary_width()
+  if system == 0 { card_width = state.content_width() }
+  let absolute_top = state.card_top(control)
+  let top = absolute_top - state.scroll()
+  let bottom = top + state.summary_height(system)
+  if top < 174.0 { top = 174.0 }
+  if bottom > 174.0 + state.body_height() { bottom = 174.0 + state.body_height() }
+  if bottom <= top { return }
+  draw_card(state, control, left, top, card_width, bottom - top)
+  let name = state.chassis().name()
+  if system == 1 { name = "SOLAR POWER" }
+  if system == 2 { name = "BATTERY" }
+  if system == 3 { name = "LIFE SUPPORT" }
+  if system == 4 { name = "STORAGE" }
+  if system >= 5 {
+    name = machine_name(state.machine(system - 5))
+    if state.machine(system - 5) == 0 { name = machine_slot_name(system - 5) }
+    if state.machine(system - 5) == 3 { name = "ELECTROLYSIS" }
+    if state.machine(system - 5) == 4 { name = "KIT FABRICATOR" }
+  }
+  body_text(state, left + 8.0, absolute_top + 8.0, name, 9.0, 245, 249, 255)
+  if system < 5 or state.machine(system - 5) != 0 {
+    body_text(state, left + card_width - 46.0, absolute_top + 9.0,
+              "HP ${state.economy().durability(system)}", 7.0, 71, 174, 255)
+  }
+  if state.system_warning(system) {
+    body_text(state, left + 8.0, absolute_top + 25.0, state.system_status(system), 8.0, 255, 212, 91)
+  } else {
+    body_text(state, left + 8.0, absolute_top + 25.0, state.system_status(system), 8.0, 245, 249, 255)
+  }
+  if system >= 5 and state.machine(system - 5) == 0 {
+    body_text(state, left + 8.0, absolute_top + 43.0, "CHOOSE A MACHINE TO BUILD", 8.0, 71, 174, 255)
+    return
+  }
+  if state.system_has_deficit(system) {
+    body_text(state, left + 8.0, absolute_top + 43.0, state.balance_badge(system), 7.0, 255, 132, 132)
+  } else {
+    if state.system_has_surplus(system) {
+      body_text(state, left + 8.0, absolute_top + 43.0, state.balance_badge(system), 7.0, 86, 222, 157)
+    } else {
+      body_text(state, left + 8.0, absolute_top + 43.0, state.balance_badge(system), 7.0, 142, 164, 188)
+    }
+  }
+  let row: Int64 = 0
+  let y = absolute_top + 60.0
+  while row < state.summary_rows(system) {
+    draw_balance_row(state, state.summary_resource(system, row), left + 8.0, y)
+    y = y + 34.0
+    row = row + 1
+  }
+}
+
+fun draw_slots(state: BaseUIState, left: Float64): Void {
+  body_text(state, left, 176.0, "GREEN SURPLUS / RED DEFICIT / GRAY HOLD", 7.0, 142, 203, 255)
+  body_text(state, left, 190.0, state.sampling_caption(), 7.0, 142, 164, 188)
+  draw_summary_card(state, 4, 0)
+  body_text(state, left, state.card_top(10) - 16.0, "MANDATORY SYSTEMS - TYPE LOCKED", 8.0, 142, 203, 255)
+  body_text(state, left, state.machine_top() - 16.0, "MACHINE SLOTS - SPECIALIZE YOUR BASE", 8.0, 142, 203, 255)
+  let slot: Int64 = 0
+  while slot < 4 {
+    draw_summary_card(state, 10 + slot, 1 + slot)
+    draw_summary_card(state, 20 + slot, 5 + slot)
+    slot = slot + 1
+  }
+}
+
+fun draw_inspector(state: BaseUIState, left: Float64): Void {
+  let control = state.inspected()
+  let system = state.inspected_system()
+  let name = state.chassis().name()
+  if system > 0 and system < 5 { name = system_name(system) }
+  if system >= 5 { name = machine_name(state.machine(system - 5)) }
+  body_text(state, left, 182.0, name, 10.0, 245, 249, 255)
+  if state.visible(204.0 - state.scroll(), 9.0) {
+    status_text(state, system, left, 204.0 - state.scroll(), state.system_status(system), 9.0)
+  }
+  body_text(state, left, 222.0, state.card_context(system), 8.0, 142, 203, 255)
+  let sampling = "STARTUP ${state.economy().flow_window_seconds()} s / RATED: CAPACITY"
+  if state.economy().flow_window_seconds() == 60 { sampling = "LAST COMPLETE 60 s / RATED: CAPACITY" }
+  body_text(state, left, 240.0, sampling, 7.0, 142, 164, 188)
+  let row: Int64 = 0
+  let top = 260.0
+  if state.system_resources(system) > 0 {
+    body_text(state, left, top, "RESOURCE BALANCE / BASE-WIDE NET", 8.0, 142, 203, 255)
+    top = top + 26.0
+    while row < state.system_resources(system) {
+      draw_balance_row(state, state.system_resource(system, row), left, top)
+      top = top + 34.0
+      row = row + 1
+    }
+  }
+  row = 0
+  while row < state.context_rows(system) {
+    body_text(state, left, top, state.context_line(system, row), 8.0, 245, 249, 255)
+    top = top + 18.0
+    row = row + 1
+  }
+  body_text(state, left, top + 4.0,
+            "DURABILITY ${state.economy().durability(system)} OF 100", 9.0, 142, 203, 255)
+  body_text(state, left, top + 22.0, "AUTO REPAIR AT 75 / PLUS 25", 8.0, 142, 164, 188)
+  body_text(state, left, top + 40.0, state.flow_line(system, 10), 8.0, 142, 164, 188)
+  draw_card(state, 121, left, height() - 178.0, state.content_width(), 28.0)
+  if state.enabled(121) {
+    text(left + 12.0, height() - 169.0, "REPAIR - USE 1 KIT", 9.0, 71, 174, 255)
+  } else {
+    let label = "NO KIT AVAILABLE"
+    if state.economy().durability(state.inspected_system()) > 75 { label = "AUTO REPAIR STANDBY" }
+    if control >= 20 and control <= 23 {
+      if state.economy().building(control - 20) { label = "FINISH BUILD BEFORE REPAIR" }
+    }
+    text(left + 12.0, height() - 169.0, label, 9.0, 142, 164, 188)
+  }
+  text(left, height() - 146.0,
+       "KITS ${state.economy().stock(10)} / RESTORES 25 POINTS", 7.0, 142, 164, 188)
+  draw_card(state, 120, left, height() - 138.0, state.content_width(), 28.0)
+  text(left + 12.0, height() - 129.0, "BACK TO SLOTS", 9.0, 245, 249, 255)
+}
+
+fun draw_build_chooser(state: BaseUIState, left: Float64): Void {
+  text(left, 148.0, machine_slot_name(state.build_slot()), 10.0, 142, 203, 255)
+  let top = 174.0 - state.scroll()
+  let kind: Int64 = 1
+  while kind <= 4 {
+    if state.visible(top, 20.0) {
+      draw_card(state, 99 + kind, left, top, state.content_width(), 20.0)
+      text(left + 8.0, top + 6.0, machine_name(kind), 8.0, 245, 249, 255)
+      if state.choice() == kind { text(left + state.content_width() - 28.0, top + 6.0, "X", 8.0, 71, 174, 255) }
+    }
+    top = top + 24.0
+    kind = kind + 1
+  }
+  body_text(state, left, 278.0, "RECIPE COST / AVAILABLE STOCK", 8.0, 142, 203, 255)
+  body_text(state, left, 292.0,
+            "BUILD TIME ${Int.round(state.economy().build_seconds(state.choice()))} s",
+            8.0, 142, 203, 255)
+  let recipe_y = 308.0
+  let resource: Int64 = 0
+  while resource < state.economy().resource_count() {
+    let cost = state.economy().cost(state.choice(), resource)
+    if cost > 0 {
+      body_text(state, left, recipe_y, resource_name(resource), 7.0, 245, 249, 255)
+      let label = "${resource_amount(resource, cost)} / ${resource_amount(resource, state.economy().stock(resource))}"
+      if state.economy().stock(resource) < cost {
+        body_text(state, left + 152.0, recipe_y, label, 7.0, 255, 212, 91)
+      } else {
+        body_text(state, left + 152.0, recipe_y, label, 7.0, 71, 174, 255)
+      }
+      recipe_y = recipe_y + 14.0
+    }
+    resource = resource + 1
+  }
+  let status = "RESOURCES DEDUCTED WHEN STARTED"
+  if state.enabled(110) == false { status = "NOT ENOUGH RESOURCES TO BUILD" }
+  body_text(state, left, 412.0, status, 8.0, 142, 164, 188)
+  draw_card(state, 110, left, height() - 106.0, (state.content_width() - 12.0) / 2.0, 28.0)
+  draw_card(state, 111, left + (state.content_width() + 12.0) / 2.0, height() - 106.0, (state.content_width() - 12.0) / 2.0, 28.0)
+  if state.enabled(110) {
+    text(left + 10.0, height() - 97.0, "START BUILD", 9.0, 71, 174, 255)
+  } else {
+    text(left + 10.0, height() - 97.0, "NEED STOCK", 9.0, 142, 164, 188)
+  }
+  text(left + (state.content_width() + 12.0) / 2.0 + 12.0, height() - 97.0, "CANCEL", 9.0, 245, 249, 255)
+}
+
+fun draw_resources(state: BaseUIState, left: Float64): Void {
+  body_text(state, left, 180.0, "POWER AND SUPPLIES", 10.0, 142, 203, 255)
+  body_text(state, left, 200.0,
+            "SOLAR ${scaled_amount(state.economy().generated_watts(), "kW")} / LOAD ${scaled_amount(state.economy().demanded_watts(), "kW")}",
+            8.0, 245, 249, 255)
+  body_text(state, left, 220.0,
+            "NET ${scaled_amount(state.economy().net_watts(), "kW")} / SERVED ${scaled_amount(state.economy().served_watts(), "kW")}",
+            8.0, 71, 174, 255)
+  body_text(state, left, 240.0,
+            "BATTERY ${scaled_amount(state.economy().battery_energy() / 3600, "kWh")} OF 200 kWh",
+            8.0, 245, 249, 255)
+  body_text(state, left, 260.0,
+            "SHARED H2O ${resource_amount(5, state.economy().water_supply())}", 8.0, 142, 203, 255)
+  body_text(state, left, 280.0, "STATUS ${base_status(state)}", 8.0, 71, 174, 255)
+  body_text(state, left, 300.0,
+            "STORAGE ${(state.economy().storage_used() + 999) / 1000} OF ${state.economy().capacity() / 1000} kg",
+            9.0, 142, 203, 255)
+  let resource: Int64 = 0
+  let top = 324.0
+  while resource < state.economy().resource_count() {
+    draw_balance_row(state, resource, left, top)
+    resource = resource + 1
+    top = top + 34.0
+  }
+  body_text(state, left, 714.0, "FOOD: NO LOCAL PRODUCTION", 8.0, 255, 132, 132)
+  body_text(state, left, 734.0, "AUTO REPAIRS ${state.economy().automatic_repair_count()}", 8.0, 142, 164, 188)
+  body_text(state, left, 754.0, state.sampling_caption(), 7.0, 142, 164, 188)
+}
+
+fun draw_details(state: BaseUIState, left: Float64): Void {
+  body_text(state, left, 180.0, "BASE DETAILS / READ-ONLY", 10.0, 142, 203, 255)
+  body_text(state, left, 208.0, "NAME           SHACKLETON", 9.0, 245, 249, 255)
+  let status = "STATUS         ${base_status(state)}"
+  body_text(state, left, 229.0, status, 9.0, 71, 174, 255)
+  body_text(state, left, 250.0, "BODY           MOON", 9.0, 245, 249, 255)
+    body_text(state, left, 278.0, "FIXTURE LAT    30.000 N", 9.0, 245, 249, 255)
+    body_text(state, left, 299.0, "FIXTURE LON     0.000 E", 9.0, 245, 249, 255)
+    body_text(state, left, 320.0, "MARKER ALT     10 m", 9.0, 245, 249, 255)
+    body_text(state, left, 349.0, "CHASSIS        PLAIN", 9.0, 245, 249, 255)
+    body_text(state, left, 370.0, "BONUSES        NONE", 9.0, 245, 249, 255)
+    body_text(state, left, 394.0, "DEMO COORDINATES, NOT REAL SITE", 8.0, 142, 164, 188)
+}
+
+fun draw_base_ui(state: BaseUIState): Void {
+  let panel_x = width() - state.panel_width()
+  let panel_height = height() - 144.0
+  let left = panel_x + 12.0
+  fill(panel_x - 2.0, 88.0, state.panel_width() - 32.0, panel_height + 4.0, 142, 203, 255)
+  fill(panel_x, 90.0, state.panel_width() - 36.0, panel_height, 16, 43, 70)
+  text(left, 104.0, "SHACKLETON BASE", 14.0, 245, 249, 255)
+  let status = "${base_status(state)} / DEMO SESSION"
+  text(left, 126.0, status, 8.0, 71, 174, 255)
+  if state.modal() {
+    draw_build_chooser(state, left)
+  } else {
+    let tab_width = (state.content_width() - 8.0) / 3.0
+    draw_card(state, 1, left, 144.0, tab_width, 24.0)
+    draw_card(state, 2, left + tab_width + 4.0, 144.0, tab_width, 24.0)
+    draw_card(state, 3, left + 2.0 * (tab_width + 4.0), 144.0, tab_width, 24.0)
+    let tab_x = left
+    if state.tab() == 1 { tab_x = tab_x + tab_width + 4.0 }
+    if state.tab() == 2 { tab_x = tab_x + 2.0 * (tab_width + 4.0) }
+    fill(tab_x, 166.0, tab_width, 2.0, 71, 174, 255)
+    text(left + 12.0, 152.0, "SLOTS", 8.0, 245, 249, 255)
+    text(left + tab_width + 12.0, 152.0, "RESOURCES", 8.0, 245, 249, 255)
+    text(left + 2.0 * (tab_width + 4.0) + 12.0, 152.0, "DETAILS", 8.0, 245, 249, 255)
+    if state.tab() == 0 {
+      if state.inspected() == 0 { draw_slots(state, left) }
+      else { draw_inspector(state, left) }
+    }
+    if state.tab() == 1 { draw_resources(state, left) }
+    if state.tab() == 2 { draw_details(state, left) }
+    draw_card(state, 30, left, height() - 98.0, state.content_width(), 30.0)
+    text(left + 40.0, height() - 88.0, "RETURN TO ORBIT [R]", 9.0, 245, 249, 255)
+  }
+  if state.max_scroll() > 0.0 {
+    text(left, height() - 62.0, "WHEEL OVER PANEL: SCROLL", 7.0, 142, 164, 188)
+  } else {
+    text(left, height() - 62.0, "TAB: FOCUS / ENTER: SELECT", 7.0, 142, 164, 188)
+  }
+}
+
+export draw_base_ui

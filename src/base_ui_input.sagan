@@ -1,0 +1,29 @@
+module base_ui_input
+
+import width from render.ui
+import height from render.ui
+import key_pressed from render.ui
+import pointer_pressed from render.ui
+import pointer_released from render.ui
+import pointer_x from render.ui
+import pointer_y from render.ui
+import scroll_y from render.ui
+
+import BaseUIState from base_ui
+
+/// Translate renderer input into presentation-only UI state.
+fun update_base_ui(state: BaseUIState, now: Float64): Void {
+  state.update_layout!(width(), height())
+  state.update!(now)
+  state.scroll_by!(scroll_y())
+  state.pointer!(pointer_x(), pointer_y(),
+                 pointer_pressed(), pointer_released())
+  if key_pressed("tab") { state.focus_next!(false) }
+  if key_pressed("shift-tab") { state.focus_next!(true) }
+  if key_pressed("enter") { state.keyboard_activate!() }
+  if key_pressed("space") { state.keyboard_activate!() }
+  if key_pressed("escape") { state.cancel!() }
+  if state.take_return!() { state.cancel!() }
+}
+
+export update_base_ui
