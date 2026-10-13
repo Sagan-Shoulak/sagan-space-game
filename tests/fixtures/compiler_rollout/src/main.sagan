@@ -18,11 +18,16 @@ fun main(): Int {
   assert(state.status == "ready")
   assert(state["status"] == state.status)
   assert(state.computed == "explicit")
+  assert("status" in state)
+  assert(computed_key in state)
+  assert(("missing" in state) == false)
   state.status = "running"
   assert(state["status"] == "running")
 
   let numeric = {1: "one"}
   assert(numeric[1] == "one")
+  assert(1 in numeric)
+  assert((2 in numeric) == false)
 
   let caught_missing = false
   hope print(state.missing)
