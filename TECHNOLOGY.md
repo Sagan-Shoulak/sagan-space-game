@@ -37,7 +37,8 @@ outputs should be evaluated as prototype behavior, not as validated
 astronomical data or promised gameplay.
 
 The local launcher resolves exact Sagan, physics, and renderer commits into
-ignored caches, creates one package catalog, emits the application C++, links
+ignored caches, creates one package catalog containing the compiler-pinned
+`sagan-time` library alongside physics and rendering, emits the application C++, links
 the renderer's native host against pinned SDL, and runs from the renderer root
 so its reviewed shaders and planetary assets remain available. These exact
 source pins are development integration inputs, not released-package evidence.

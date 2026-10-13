@@ -1,0 +1,36 @@
+module main
+
+import duration from time.duration
+import manual_clock from time.monotonic
+import now from time.monotonic
+
+fun main(): Int {
+  let started = now()
+  assert(now().since(started).nanoseconds() >= 0 nanosecond)
+
+  let clock = manual_clock()
+  let zero = clock.now()
+  clock.advance!(duration(1.0 second))
+  assert(clock.now().since(zero).seconds() == 1.0 second)
+
+  let computed_key = "computed"
+  let state = {status: "ready", (computed_key): "explicit"}
+  assert(state.status == "ready")
+  assert(state["status"] == state.status)
+  assert(state.computed == "explicit")
+  state.status = "running"
+  assert(state["status"] == "running")
+
+  let numeric = {1: "one"}
+  assert(numeric[1] == "one")
+
+  let caught_missing = false
+  hope print(state.missing)
+  unless RuntimeError.missing_key caught_missing = true
+  assert(caught_missing)
+
+  print("Compiler rollout test passed")
+  return 0
+}
+
+exit(main())

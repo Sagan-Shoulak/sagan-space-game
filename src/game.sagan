@@ -11,13 +11,15 @@ import text from render.ui
 import mesh_sphere from render.ui
 import mesh_box from render.ui
 import present from render.ui
-import elapsed_seconds from render.ui
 import key_pressed from render.ui
 import pointer_pressed from render.ui
 import pointer_released from render.ui
 import pointer_x from render.ui
 import pointer_y from render.ui
 import scroll_y from render.ui
+
+import duration from time.duration
+import frame_clock from time.game
 
 import BaseUIState from base_ui
 import draw_base_ui from base_ui
@@ -180,12 +182,14 @@ fun compose(base_ui: BaseUIState): Void {
 let base = Base(SolarGenerator(), LifeSupport())
 if open("Space Game - Shackleton Base", 1280, 800) {
   let base_ui = BaseUIState()
+  let clock = frame_clock()
   let running = true
   let simulated_second = 0.0
   while running {
     if poll() == false { running = false }
     if running {
-      let now: Float64 = elapsed_seconds()
+      let frame = clock.tick!()
+      let now: Float64 = frame.elapsed().ratio(duration(1.0 second))
       base_ui.update_layout!(width(), height())
       base_ui.update!(now)
       base_ui.scroll_by!(scroll_y())
