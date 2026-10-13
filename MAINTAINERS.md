@@ -32,6 +32,16 @@ windowed game with:
 bash scripts/run.sh
 ```
 
+To resolve and build all pinned dependencies without compiling or launching
+the game, use:
+
+```bash
+bash scripts/rebuild.sh
+```
+
+`scripts/run.sh` calls this dependency preparation step before it compiles the
+game, then launches the selected entry point unless `--build-only` is set.
+
 On the first run, `scripts/resolve-sagan.sh` clones the exact commit in
 `sagan-source-commit.txt`, builds it under ignored
 `build/sagan-pinned-<commit>/`, and reuses that compiler on later runs.

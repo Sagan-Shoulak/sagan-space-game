@@ -17,6 +17,8 @@ if [[ $# -gt 1 ]]; then
   exit 2
 fi
 
+bash scripts/rebuild.sh
+
 host_os="$(uname -s)"
 mkdir -p build/game build/tmp
 
