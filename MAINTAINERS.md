@@ -45,6 +45,10 @@ game, then launches the selected entry point unless `--build-only` is set.
 On the first run, `scripts/resolve-sagan.sh` clones the exact commit in
 `sagan-source-commit.txt`, builds it under ignored
 `build/sagan-pinned-<commit>/`, and reuses that compiler on later runs.
+Reuse requires both the cached checkout and its successful-build provenance
+stamp to match the full pinned commit. A missing or mismatched stamp causes a
+clean rebuild, preventing an interrupted update from leaving a stale executable
+behind an apparently current source checkout.
 `scripts/resolve-physics.sh` likewise clones the exact commit in
 `sagan-physics-commit.txt` under ignored
 `build/sagan-physics-pinned-<commit>/`. `scripts/resolve-render.sh` clones the
