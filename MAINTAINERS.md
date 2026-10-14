@@ -39,6 +39,19 @@ the game, use:
 bash scripts/rebuild.sh
 ```
 
+To run an individual Sagan file with the current pinned compiler and package
+catalog on macOS, Linux, or Windows Bash, use:
+
+```bash
+bash scripts/sagan.sh src/resources.sagan
+```
+
+The wrapper forwards all arguments to the compiler and resolves the catalog
+on each invocation unless `SAGAN_PACKAGE_INDEX` is explicitly set. It reuses
+the existing dependency caches and follows the tracked pins when they change.
+Clear an old terminal override with `unset SAGAN_PACKAGE_INDEX` to restore
+automatic resolution. Relative file arguments use the caller's working directory.
+
 `scripts/run.sh` calls this dependency preparation step before it compiles the
 game, then launches the selected entry point unless `--build-only` is set.
 
