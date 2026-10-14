@@ -11,9 +11,9 @@ class System has Degradable {
 
 
 class LifeSupport is System, has Powered {
-  let h2o_usage: Float<kilogram / second>  = 1 (kilogram / second) // / 1 person
-  let food_usage: Float<kilogram / second> = 1 (kilogram / second) // / 1 person
-  let o2_usage: Float<kilogram / second>   = 1 (kilogram / second) // / 1 person
+  let h2o_usage: Float<kilogram / second>  = 1 (kilogram / second)
+  let food_usage: Float<kilogram / second> = 1 (kilogram / second) // TODO: Move to base usage directly
+  let o2_usage: Float<kilogram / second>   = 1 (kilogram / second)
   
   new() {
     self.powerUsage = 75 watt
