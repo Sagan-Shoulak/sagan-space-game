@@ -74,5 +74,7 @@ class ResourceBundle {
   } 
 }
 
+print("\nDEMO\n")
+
 export MassiveResource
 export ResourceBundle
